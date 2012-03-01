@@ -6,17 +6,24 @@
  */
 
 #ifdef __APPLE__
+#ifndef CMSPAR
+#define CMSPAR 010000000000
+#endif
+#ifndef IOSSIOSPEED
+#define IOSSIOSPEED _IOW('T', 2, speed_t)
+#endif
 #include <cstdlib>
 #include <fcntl.h>
 #include <termios.h>
+#include <sys/ioctl.h>
 #include "../j_extensions_comm_SerialComm.h"
 
 JNIEXPORT jobject JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JNIEnv *env, jclass serialCommClass)
 {
-	DWORD numValues, valueLength, comPortLength;
-	HKEY keyHandle;
-	CHAR valueName[128];
-	BYTE comPort[128];
+	//DWORD numValues, valueLength, comPortLength;
+	//HKEY keyHandle;
+	//CHAR valueName[128];
+	//BYTE comPort[128];
 
 	// Create new ArrayList of SerialComm objects
 	jclass arrayListClass = env->FindClass("Ljava/util/ArrayList;");
@@ -27,7 +34,7 @@ JNIEXPORT jobject JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JNIEnv 
 	jobject arrayListObject = env->NewObject(arrayListClass, arrayListConstructor, 0);
 
 	// Enumerate serial ports on machine
-	RegOpenKeyEx(HKEY_LOCAL_MACHINE, "HARDWARE\\DEVICEMAP\\SERIALCOMM", 0, KEY_QUERY_VALUE, &keyHandle);
+	/*RegOpenKeyEx(HKEY_LOCAL_MACHINE, "HARDWARE\\DEVICEMAP\\SERIALCOMM", 0, KEY_QUERY_VALUE, &keyHandle);
 	RegQueryInfoKey(keyHandle, NULL, NULL, NULL, NULL, NULL, NULL, &numValues, NULL, NULL, NULL, NULL);
 	for (DWORD i = 0; i < numValues; ++i)
 	{
@@ -42,67 +49,68 @@ JNIEXPORT jobject JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JNIEnv 
 
 		// Add new SerialComm object to array list
 		env->CallBooleanMethod(arrayListObject, arrayListAddMethod, serialCommObject);
-	}
+	}*/
 
 	return arrayListObject;
 }
 
 JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_openPort(JNIEnv *env, jobject obj)
 {
-	HANDLE hSerial;
+	int fdSerial;
 	jstring portNameJString = (jstring)env->GetObjectField(obj, env->GetFieldID(env->GetObjectClass(obj), "comPort", "Ljava/lang/String;"));
 	const char *portName = env->GetStringUTFChars(portNameJString, NULL);
 
-	if ((hSerial = CreateFile(portName, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0)) != INVALID_HANDLE_VALUE)
+	if ((fdSerial = open(portName, O_RDWR | O_NOCTTY)) > 0)
 	{
-		env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), (jlong)hSerial);
+		env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), fdSerial);
 
 		if (Java_j_extensions_comm_SerialComm_configPort(env, obj))
 			env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_TRUE);
 		else
 		{
-			CloseHandle(hSerial);
-			hSerial = INVALID_HANDLE_VALUE;
+			close(fdSerial);
+			fdSerial = -1;
 			env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), -1l);
 			env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
 		}
 	}
 
 	env->ReleaseStringUTFChars(portNameJString, portName);
-	return (hSerial == INVALID_HANDLE_VALUE) ? JNI_FALSE : JNI_TRUE;
+	return (fdSerial == -1) ? JNI_FALSE : JNI_TRUE;
 }
 
 JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configPort(JNIEnv *env, jobject obj)
 {
-	DCB dcbSerialParams = {0};
-	dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
 	jclass serialCommClass = env->GetObjectClass(obj);
-
-	HANDLE serialHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(serialCommClass, "portHandle", "J"));
-	DWORD baudRate = (DWORD)env->GetIntField(obj, env->GetFieldID(serialCommClass, "baudRate", "I"));
-	BYTE byteSize = (BYTE)env->GetIntField(obj, env->GetFieldID(serialCommClass, "byteSize", "I"));
+	int portFD = (int)env->GetLongField(obj, env->GetFieldID(serialCommClass, "portHandle", "J"));
+	speed_t baudRate = env->GetIntField(obj, env->GetFieldID(serialCommClass, "baudRate", "I"));
+	int byteSizeInt = env->GetIntField(obj, env->GetFieldID(serialCommClass, "byteSize", "I"));
 	int stopBitsInt = env->GetIntField(obj, env->GetFieldID(serialCommClass, "stopBits", "I"));
 	int parityInt = env->GetIntField(obj, env->GetFieldID(serialCommClass, "parity", "I"));
-	BYTE stopBits = (stopBitsInt == j_extensions_comm_SerialComm_ONE_SB) ? ONESTOPBIT : (stopBitsInt == j_extensions_comm_SerialComm_ONE_POINT_FIVE_SB) ? ONE5STOPBITS : TWOSTOPBITS;
-	BYTE parity = (parityInt == j_extensions_comm_SerialComm_NO_PARITY) ? NOPARITY : (parityInt == j_extensions_comm_SerialComm_ODD_PARITY) ? ODDPARITY : (parityInt == j_extensions_comm_SerialComm_EVEN_PARITY) ? EVENPARITY : (parityInt == j_extensions_comm_SerialComm_MARK_PARITY) ? MARKPARITY : SPACEPARITY;
+	tcflag_t byteSize = (byteSizeInt == 5) ? CS5 : (byteSizeInt == 6) ? CS6 : (byteSizeInt == 7) ? CS7 : CS8;
+	tcflag_t stopBits = ((stopBitsInt == j_extensions_comm_SerialComm_ONE_SB) || (stopBitsInt == j_extensions_comm_SerialComm_ONE_POINT_FIVE_SB)) ? 0 : CSTOPB;
+	tcflag_t parity = (parityInt == j_extensions_comm_SerialComm_NO_PARITY) ? 0 : (parityInt == j_extensions_comm_SerialComm_ODD_PARITY) ? (PARENB | PARODD) : (parityInt == j_extensions_comm_SerialComm_EVEN_PARITY) ? PARENB : (parityInt == j_extensions_comm_SerialComm_MARK_PARITY) ? (PARENB | CMSPAR | PARODD) : (PARENB | CMSPAR);
 
-	if (!GetCommState(serialHandle, &dcbSerialParams))
-		return false;
+	struct termios options;
+	fcntl(portFD, F_SETFL, 0);
+	tcgetattr(portFD, &options);
+	options.c_cflag = (B9600 | byteSize | stopBits | parity | CLOCAL | CREAD);
+	if (parityInt == j_extensions_comm_SerialComm_SPACE_PARITY)
+		options.c_cflag &= ~PARODD;
+	options.c_iflag = (parity & PARENB > 0) ? (INPCK | ISTRIP) : 0;
+	options.c_oflag = 0;
+	options.c_lflag = 0;
+	options.c_cc[VMIN] = 1;
+	options.c_cc[VTIME] = 0;
+	tcsetattr(portFD, TCSAFLUSH, &options);
 
-	dcbSerialParams.BaudRate = baudRate;
-	dcbSerialParams.ByteSize = byteSize;
-	dcbSerialParams.StopBits = stopBits;
-	dcbSerialParams.Parity = parity;
-	dcbSerialParams.fOutX = FALSE;
-	dcbSerialParams.fInX = FALSE;
-
-	return SetCommState(serialHandle, &dcbSerialParams);
+	return (ioctl(portFD, IOSSIOSPEED, &baudRate) == -1) ? JNI_FALSE : JNI_TRUE;
 }
 
 JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_closePort(JNIEnv *env, jobject obj)
 {
-	HANDLE portHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
-	CloseHandle(portHandle);
+	int portFD = (int)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
+	close(portFD);
 	env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), -1l);
 	env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
 
@@ -112,48 +120,46 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_closePort(JNIEnv *e
 JNIEXPORT jint JNICALL Java_j_extensions_comm_SerialComm_readBytes(JNIEnv *env, jobject obj, jbyteArray buffer, jlong bytesToRead)
 {
 	signed char *readBuffer = (signed char*)malloc(bytesToRead);
-	DWORD numBytesRead = 0;
-	BOOL result;
+	int numBytesRead;
 
-	static HANDLE serialPortHandle = NULL;
-	if (serialPortHandle == NULL)
-		serialPortHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
+	static int serialPortFD = -1;
+	if (serialPortFD == -1)
+		serialPortFD = (int)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
 
-	if ((result = ReadFile(serialPortHandle, readBuffer, bytesToRead, &numBytesRead, NULL)) != FALSE)
+	if ((numBytesRead = read(serialPortFD, readBuffer, bytesToRead)) > -1)
 		env->SetByteArrayRegion(buffer, 0, numBytesRead, readBuffer);
 	else
 	{
-		CloseHandle(serialPortHandle);
-		serialPortHandle = NULL;
+		close(serialPortFD);
+		serialPortFD = -1;
 		env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), -1l);
 		env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
 	}
 
 	free(readBuffer);
-	return (result == TRUE) ? numBytesRead : -1;
+	return numBytesRead;
 }
 
 JNIEXPORT jint JNICALL Java_j_extensions_comm_SerialComm_writeBytes(JNIEnv *env, jobject obj, jbyteArray buffer, jlong bytesToWrite)
 {
 	signed char *writeBuffer = (signed char*)malloc(bytesToWrite);
-	DWORD numBytesWritten = 0;
-	BOOL result;
+	int numBytesWritten;
 
-	static HANDLE serialPortHandle = NULL;
-	if (serialPortHandle == NULL)
-		serialPortHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
+	static int serialPortFD = -1;
+	if (serialPortFD == -1)
+		serialPortFD = (int)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
 
 	env->GetByteArrayRegion(buffer, 0, bytesToWrite, writeBuffer);
-	if ((result = WriteFile(serialPortHandle, writeBuffer, bytesToWrite, &numBytesWritten, NULL)) == FALSE)
+	if ((numBytesWritten = write(serialPortFD, writeBuffer, bytesToWrite)) == -1)
 	{
-		CloseHandle(serialPortHandle);
-		serialPortHandle = NULL;
+		close(serialPortFD);
+		serialPortFD = -1;
 		env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), -1l);
 		env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
 	}
 
 	free(writeBuffer);
-	return (result == TRUE) ? numBytesWritten : -1;
+	return numBytesWritten;
 }
 
 #endif

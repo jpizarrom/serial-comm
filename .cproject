@@ -24,7 +24,18 @@
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.1831871897" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler">
 								<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.option.optimization.level.1165648755" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.debugging.level.184646575" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
-								<option id="gnu.c.compiler.option.include.paths.364685265" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths"/>
+								<option id="gnu.c.compiler.option.include.paths.364685265" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Headers"/>
+								</option>
+								<option id="gnu.c.compiler.option.preprocessor.undef.symbol.244956898" name="Undefined symbols (-U)" superClass="gnu.c.compiler.option.preprocessor.undef.symbol" valueType="undefDefinedSymbols">
+									<listOptionValue builtIn="false" value="WINNT"/>
+									<listOptionValue builtIn="false" value="__WINNT"/>
+									<listOptionValue builtIn="false" value="_WIN32"/>
+									<listOptionValue builtIn="false" value="__WINNT__"/>
+									<listOptionValue builtIn="false" value="WIN32"/>
+									<listOptionValue builtIn="false" value="__WIN32"/>
+									<listOptionValue builtIn="false" value="__WIN32__"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.48807221" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.388357423" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler">
@@ -32,6 +43,15 @@
 								<option id="gnu.cpp.compiler.option.debugging.level.1794975477" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.334994732" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Headers"/>
+								</option>
+								<option id="gnu.cpp.compiler.option.preprocessor.undef.1373203031" name="Undefined symbols (-U)" superClass="gnu.cpp.compiler.option.preprocessor.undef" valueType="undefDefinedSymbols">
+									<listOptionValue builtIn="false" value="WINNT"/>
+									<listOptionValue builtIn="false" value="__WINNT"/>
+									<listOptionValue builtIn="false" value="_WIN32"/>
+									<listOptionValue builtIn="false" value="__WINNT__"/>
+									<listOptionValue builtIn="false" value="WIN32"/>
+									<listOptionValue builtIn="false" value="__WIN32"/>
+									<listOptionValue builtIn="false" value="__WIN32__"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.2107572869" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -80,19 +100,13 @@
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.targetPlatform.gnu.cross.1853985471" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
 							<builder arguments="-C ${workspace_loc:/SerialComm} -f Makefile_Win64" command="C:\mingw_w64\bin\mingw32-make" enableAutoBuild="true" errorParsers="org.eclipse.cdt.core.GmakeErrorParser" id="cdt.managedbuild.builder.gnu.cross.1055419705" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.builder.gnu.cross"/>
 							<tool errorParsers="org.eclipse.cdt.core.GCCErrorParser" id="cdt.managedbuild.tool.gnu.cross.c.compiler.714767857" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler">
-								<option id="gnu.c.compiler.option.include.paths.1103317456" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;c:/Program Files/Java/jdk1.7.0/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;c:/Program Files/Java/jdk1.7.0/include/win32&quot;"/>
-								</option>
+								<option id="gnu.c.compiler.option.include.paths.1103317456" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths"/>
 								<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.option.optimization.level.1949830729" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.debugging.level.286055115" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1476530788" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool errorParsers="org.eclipse.cdt.core.GCCErrorParser" id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1011110941" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler">
-								<option id="gnu.cpp.compiler.option.include.paths.1920684381" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;c:/Program Files/Java/jdk1.7.0/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;c:/Program Files/Java/jdk1.7.0/include/win32&quot;"/>
-								</option>
+								<option id="gnu.cpp.compiler.option.include.paths.1920684381" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths"/>
 								<option id="gnu.cpp.compiler.option.optimization.level.760353955" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.debugging.level.602220423" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1267116598" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
@@ -144,19 +158,13 @@
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.targetPlatform.gnu.cross.1164744863" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
 							<builder arguments="-C ${workspace_loc:/SerialComm} -f Makefile_Win32" command="C:\MinGW\bin\mingw32-make" enableAutoBuild="true" errorParsers="org.eclipse.cdt.core.GmakeErrorParser" id="cdt.managedbuild.builder.gnu.cross.1682853091" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.builder.gnu.cross"/>
 							<tool errorParsers="org.eclipse.cdt.core.GCCErrorParser" id="cdt.managedbuild.tool.gnu.cross.c.compiler.507401020" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler">
-								<option id="gnu.c.compiler.option.include.paths.622736901" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;c:/Program Files/Java/jdk1.7.0/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;c:/Program Files/Java/jdk1.7.0/include/win32&quot;"/>
-								</option>
+								<option id="gnu.c.compiler.option.include.paths.622736901" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths"/>
 								<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.option.optimization.level.1920609905" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.debugging.level.73081070" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1210453753" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool errorParsers="org.eclipse.cdt.core.GCCErrorParser" id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1475358483" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler">
-								<option id="gnu.cpp.compiler.option.include.paths.468411875" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;c:/Program Files/Java/jdk1.7.0/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;c:/Program Files/Java/jdk1.7.0/include/win32&quot;"/>
-								</option>
+								<option id="gnu.cpp.compiler.option.include.paths.468411875" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths"/>
 								<option id="gnu.cpp.compiler.option.optimization.level.1361440142" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.debugging.level.876776841" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.196720185" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>

@@ -1,7 +1,7 @@
 all : libSerialComm.jnilib
-	-del j_extensions_comm_SerialComm_SerialCommInputStream.h
-	-del j_extensions_comm_SerialComm_SerialCommOutputStream.h
-	-del OSX64\SerialComm_OSX.o
+	rm OSX64/SerialComm_OSX.o
+	rm j_extensions_comm_SerialComm_SerialCommInputStream.h
+	rm j_extensions_comm_SerialComm_SerialCommOutputStream.h
 libSerialComm.jnilib : SerialComm_OSX.o
 	cc -dynamiclib -o OSX64/libSerialComm.jnilib OSX64/SerialComm_OSX.o -framework JavaVM
 SerialComm_OSX.o : OSX64/SerialComm_OSX.cpp j_extensions_comm_SerialComm.h
@@ -9,7 +9,7 @@ SerialComm_OSX.o : OSX64/SerialComm_OSX.cpp j_extensions_comm_SerialComm.h
 j_extensions_comm_SerialComm.h : j/extensions/comm/SerialComm.class
 	javah -jni j.extensions.comm.SerialComm
 clean :
-	-del j_extensions_comm_SerialComm.h
-	-del j_extensions_comm_SerialComm_SerialCommInputStream.h
-	-del j_extensions_comm_SerialComm_SerialCommOutputStream.h
-	-del OSX64\SerialComm_OSX.o
+	rm j_extensions_comm_SerialComm_SerialCommInputStream.h
+	rm j_extensions_comm_SerialComm_SerialCommOutputStream.h
+	rm j_extensions_comm_SerialComm.h
+	rm OSX64/SerialComm_OSX.o

@@ -1,7 +1,7 @@
 all : libSerialComm.dll
-	-del j_extensions_comm_SerialComm_SerialCommInputStream.h
-	-del j_extensions_comm_SerialComm_SerialCommOutputStream.h
-	-del Win64\SerialComm_Windows.o
+	del j_extensions_comm_SerialComm_SerialCommInputStream.h
+	del j_extensions_comm_SerialComm_SerialCommOutputStream.h
+	del Win64\SerialComm_Windows.o
 libSerialComm.dll : SerialComm_Windows.o
 	gcc -shared -o Win64/SerialComm.dll Win64/SerialComm_Windows.o
 SerialComm_Windows.o : Win64/SerialComm_Windows.cpp j_extensions_comm_SerialComm.h
@@ -9,7 +9,7 @@ SerialComm_Windows.o : Win64/SerialComm_Windows.cpp j_extensions_comm_SerialComm
 j_extensions_comm_SerialComm.h : j/extensions/comm/SerialComm.class
 	javah -jni j.extensions.comm.SerialComm
 clean :
-	-del j_extensions_comm_SerialComm.h
-	-del j_extensions_comm_SerialComm_SerialCommInputStream.h
-	-del j_extensions_comm_SerialComm_SerialCommOutputStream.h
-	-del Win64\SerialComm_Windows.o
+	del j_extensions_comm_SerialComm.h
+	del j_extensions_comm_SerialComm_SerialCommInputStream.h
+	del j_extensions_comm_SerialComm_SerialCommOutputStream.h
+	del Win64\SerialComm_Windows.o
