@@ -3,14 +3,13 @@ package j.extensions.comm;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 
 public class SerialComm
 {
 	static { System.loadLibrary("SerialComm"); }
 	
 	// Returns a list of all availble serial ports on this machine
-	static public native ArrayList<SerialComm> getCommPorts();
+	static public native SerialComm[] getCommPorts();
 	
 	// Parity Values
 	static final public int NO_PARITY = 0;
@@ -26,6 +25,7 @@ public class SerialComm
 	
 	// Serial Port Parameters
 	private int baudRate = 9600, byteSize = 8, stopBits = ONE_SB, parity = NO_PARITY;
+	private int readTimeout = 0, writeTimeout = 0;
 	private SerialCommInputStream inputStream = null;
 	private SerialCommOutputStream outputStream = null;
 	private String portString, comPort;
@@ -36,6 +36,7 @@ public class SerialComm
 	public native boolean openPort();								// Opens this serial port for reading/writing
 	public native boolean closePort();								// Closes this serial port
 	private native boolean configPort();							// Changes/sets serial port parameters as defined by this class
+	private native boolean configTimeouts();						// Changes/sets serial port timeouts as defined by this class
 	
 	// Serial Port Read/Write Methods
 	public native int readBytes(byte[] buffer, long bytesToRead);
@@ -65,6 +66,12 @@ public class SerialComm
 		parity = newParity;
 		configPort();
 	}
+	public void setComPortTimeouts(int newReadTimeout, int newWriteTimeout)
+	{
+		readTimeout = newReadTimeout;
+		writeTimeout = newWriteTimeout;
+		configTimeouts();
+	}
 	public void setBaudRate(int newBaudRate) { baudRate = newBaudRate; configPort(); }
 	public void setByteSize(int newByteSize) { byteSize = newByteSize; configPort(); }
 	public void setNumStopBits(int newStopBits) { stopBits = newStopBits; configPort(); }
@@ -77,6 +84,8 @@ public class SerialComm
 	public int getByteSize() { return byteSize; }
 	public int getNumStopBits() { return stopBits; }
 	public int getParity() { return parity; }
+	public int getReadTimeout() { return readTimeout; }
+	public int getWriteTimeout() { return writeTimeout; }
 	
 	private void fixAndSetComPort(String comPortName)
 	{
@@ -185,13 +194,29 @@ public class SerialComm
 	
 	static public void main(String[] args)
 	{
-		ArrayList<SerialComm> ports = SerialComm.getCommPorts();
-		SerialComm ubxPort = ports.get(1);
+		SerialComm[] ports = SerialComm.getCommPorts();
+		System.out.println("Ports:");
+		for (int i = 0; i < ports.length; ++i)
+			System.out.println("   " + ports[i].getSystemPortName() + ": " + ports[i].getDescriptivePortName());
+		SerialComm ubxPort = ports[1];
 		
-		ubxPort.openPort();
-		InputStream in = ubxPort.getInputStream();try{
-		for (long i = 0; i < 1000; ++i)
-			System.out.print((char)in.read());}catch (Exception e) {}
+		//byte[] readBuffer = new byte[2048];
+		System.out.println("Opening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort());
+		//ubxPort.setComPortTimeouts(50, 0);
+		InputStream in = ubxPort.getInputStream();
+		try
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				//System.out.println("\nReading #" + i);
+				//int numRead = ubxPort.readBytes(readBuffer, readBuffer.length);
+				//System.out.println("Read " + numRead + " bytes.");
+				
+				for (int j = 0; j < 1000; ++j)
+					System.out.print((char)in.read());
+			}
+			in.close();
+		}catch (Exception e) {}
 		
 		ubxPort.closePort();
 	}
