@@ -79,6 +79,7 @@
 					<externalSetting>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/SerialComm"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/SerialComm/Windows"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/SerialComm"/>
 						<entry flags="RESOLVED" kind="libraryFile" name="SerialComm"/>
 					</externalSetting>
 				</externalSettings>
@@ -98,7 +99,11 @@
 							<option id="cdt.managedbuild.option.gnu.cross.prefix.67406331" name="Prefix" superClass="cdt.managedbuild.option.gnu.cross.prefix"/>
 							<option id="cdt.managedbuild.option.gnu.cross.path.1327942027" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path"/>
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.targetPlatform.gnu.cross.1853985471" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
-							<builder arguments="-C ${workspace_loc:/SerialComm} -f Makefile_Win64" command="C:\mingw_w64\bin\mingw32-make" enableAutoBuild="true" errorParsers="org.eclipse.cdt.core.GmakeErrorParser" id="cdt.managedbuild.builder.gnu.cross.1055419705" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.builder.gnu.cross"/>
+							<builder arguments="-C ${workspace_loc:/SerialComm} -f Makefile_Win64" autoBuildTarget="all" cleanBuildTarget="clean" command="C:\mingw64\bin\mingw32-make" enableAutoBuild="true" enableCleanBuild="true" enabledIncrementalBuild="true" errorParsers="org.eclipse.cdt.core.GmakeErrorParser" id="cdt.managedbuild.builder.gnu.cross.1055419705" incrementalBuildTarget="all" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelizationNumber="1" superClass="cdt.managedbuild.builder.gnu.cross">
+								<outputEntries>
+									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name=""/>
+								</outputEntries>
+							</builder>
 							<tool errorParsers="org.eclipse.cdt.core.GCCErrorParser" id="cdt.managedbuild.tool.gnu.cross.c.compiler.714767857" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler">
 								<option id="gnu.c.compiler.option.include.paths.1103317456" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths"/>
 								<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.option.optimization.level.1949830729" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" valueType="enumerated"/>
