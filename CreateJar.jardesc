@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="WINDOWS-1252" standalone="no"?>
+<jardesc>
+    <jar path="SerialComm/SerialComm.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/SerialComm/CreateJar.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="true" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="false" manifestLocation="/SerialComm/MANIFEST.MF" manifestVersion="1.0" reuseManifest="true" saveManifest="true" usesManifest="true">
+        <sealing sealJar="true">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="false" exportJavaFiles="false" exportOutputFolder="true">
+        <folder path="/SerialComm/Linux32"/>
+        <folder path="/SerialComm/OSX32"/>
+        <folder path="/SerialComm/Linux64"/>
+        <file path="/SerialComm/Win64/SerialComm.dll"/>
+        <file path="/SerialComm/OSX64/libSerialComm.jnilib"/>
+        <javaElement handleIdentifier="=SerialComm/&lt;j.extensions.comm"/>
+    </selectedElements>
+</jardesc>

@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Created-By: Will Hedgecock
+Sealed: true
+
+Name: j/extensions/comm/
+Specification-Title: Java Serial Communication Classes
+Specification-Version: 1.0
+Specification-Vendor: Will Hedgecock
+Implementation-Title: j.extensions.comm
+Implementation-Version: 1.0
+Implementation-Vendor: Will Hedgecock
+Sealed: true
+
