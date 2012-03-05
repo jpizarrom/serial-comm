@@ -2,6 +2,7 @@ all : libSerialComm.dll
 	del j_extensions_comm_SerialComm_SerialCommInputStream.h
 	del j_extensions_comm_SerialComm_SerialCommOutputStream.h
 	del Win64\SerialComm_Windows.o
+	jar cmf MANIFEST.MF SerialComm.jar j/extensions/comm/*.class Linux32 Linux64 OSX32/libSerialComm.jnilib OSX64/libSerialComm.jnilib Win32/SerialComm.dll Win64/SerialComm.dll
 libSerialComm.dll : SerialComm_Windows.o
 	gcc -shared -o Win64/SerialComm.dll Win64/SerialComm_Windows.o
 SerialComm_Windows.o : Win64/SerialComm_Windows.cpp j_extensions_comm_SerialComm.h
