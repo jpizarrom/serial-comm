@@ -8,8 +8,6 @@ import java.io.OutputStream;
 
 public class SerialComm
 {
-	static final private File tempNativeLibrary;
-	
 	// Static initializer loads correct native library for this machine
 	static
 	{
@@ -68,8 +66,15 @@ public class SerialComm
 			System.exit(-1);
 		}
 		
+		// Delete any native libraries to ensure the correct library is loaded each time
+		File tempNativeLibrary = new File("SerialComm.dll");
+		if (tempNativeLibrary.exists())
+			tempNativeLibrary.delete();
+		tempNativeLibrary = new File("libSerialComm.jnilib");
+		if (tempNativeLibrary.exists())
+			tempNativeLibrary.delete();
+		
 		// Get path of native library and copy file to working directory
-		//   File will be deleted on exit to ensure the correct library is loaded each time
 		tempNativeLibrary = new File(fileName);
 		tempNativeLibrary.deleteOnExit();
 		try
