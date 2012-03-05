@@ -1,6 +1,7 @@
 package j.extensions.comm;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -67,10 +68,21 @@ public class SerialComm
 		
 		// Get path of native library and copy file to working directory
 		//   File will be deleted on exit to ensure the correct library is loaded each time
-		File fileToCopy = new File(copyFromPath + "/" + fileName);
-		File destinationFile = new File(fileName);
-		destinationFile.deleteOnExit();
-		fileToCopy.renameTo(destinationFile);
+		try
+		{
+			InputStream fileContents = SerialComm.class.getResourceAsStream("/" + copyFromPath + "/" + fileName);
+			File destinationFile = new File(fileName);
+			FileOutputStream destinationFileContents = new FileOutputStream(destinationFile);
+			
+			byte transferBuffer[] = new byte[4096];
+			int numBytesRead;
+			while ((numBytesRead = fileContents.read(transferBuffer)) > 0)
+				destinationFileContents.write(transferBuffer, 0, numBytesRead);
+			fileContents.close();
+			destinationFileContents.close();
+			destinationFile.deleteOnExit();
+		}
+		catch (Exception e) { e.printStackTrace(); }
 		
 		// Load native library
 		System.loadLibrary("SerialComm");
@@ -270,7 +282,7 @@ public class SerialComm
 		
 		byte[] readBuffer = new byte[2048];
 		System.out.println("Opening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort());
-		//ubxPort.setComPortTimeouts(50, 0);
+		ubxPort.setComPortTimeouts(50, 0);
 		InputStream in = ubxPort.getInputStream();
 		try
 		{
