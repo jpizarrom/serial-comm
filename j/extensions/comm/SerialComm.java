@@ -1,12 +1,80 @@
 package j.extensions.comm;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 public class SerialComm
 {
-	static { System.loadLibrary("SerialComm"); }
+	// Static initializer loads correct native library for this machine
+	static
+	{
+		String OS = System.getProperty("os.name").toLowerCase();
+		String copyFromPath = "", fileName = "";
+	
+		// Determine Operating System and architecture
+		if (OS.indexOf("win") >= 0)
+		{
+			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
+					(new File("C:\\Program Files (x86)").exists()))
+				copyFromPath = "Win64";
+			else
+				copyFromPath = "Win32";
+			fileName = "SerialComm.dll";
+		}
+		else if (OS.indexOf("mac") >= 0)
+		{
+			String resultString = "";
+			try
+			{
+				InputStream inStream = Runtime.getRuntime().exec("getconf LONG_BIT").getInputStream();
+				resultString += (char)inStream.read();
+				resultString += (char)inStream.read();
+				inStream.close();
+			} catch (Exception e) {}
+			
+			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
+					(resultString.indexOf("64") >= 0))
+				copyFromPath = "OSX64";
+			else
+				copyFromPath = "OSX32";
+			fileName = "libSerialComm.jnilib";
+		}
+		else if ((OS.indexOf("nix") >= 0) || (OS.indexOf("nux") >= 0))
+		{
+			String resultString = "";
+			try
+			{
+				InputStream inStream = Runtime.getRuntime().exec("getconf LONG_BIT").getInputStream();
+				resultString += (char)inStream.read();
+				resultString += (char)inStream.read();
+				inStream.close();
+			} catch (Exception e) {}
+			
+			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
+					(resultString.indexOf("64") >= 0))
+				copyFromPath = "Linux64";
+			else
+				copyFromPath = "Linux32";
+			fileName = "";
+		}
+		else
+		{
+			System.err.println("This operating system is not supported by the SerialComm library.");
+			System.exit(-1);
+		}
+		
+		// Get path of native library and copy file to working directory
+		//   File will be deleted on exit to ensure the correct library is loaded each time
+		File fileToCopy = new File(copyFromPath + "/" + fileName);
+		File destinationFile = new File(fileName);
+		destinationFile.deleteOnExit();
+		fileToCopy.renameTo(destinationFile);
+		
+		// Load native library
+		System.loadLibrary("SerialComm");
+	}
 	
 	// Returns a list of all availble serial ports on this machine
 	static public native SerialComm[] getCommPorts();
@@ -198,9 +266,9 @@ public class SerialComm
 		System.out.println("Ports:");
 		for (int i = 0; i < ports.length; ++i)
 			System.out.println("   " + ports[i].getSystemPortName() + ": " + ports[i].getDescriptivePortName());
-		SerialComm ubxPort = ports[1];
+		SerialComm ubxPort = ports[0];
 		
-		//byte[] readBuffer = new byte[2048];
+		byte[] readBuffer = new byte[2048];
 		System.out.println("Opening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort());
 		//ubxPort.setComPortTimeouts(50, 0);
 		InputStream in = ubxPort.getInputStream();
@@ -208,12 +276,12 @@ public class SerialComm
 		{
 			for (int i = 0; i < 3; ++i)
 			{
-				//System.out.println("\nReading #" + i);
-				//int numRead = ubxPort.readBytes(readBuffer, readBuffer.length);
-				//System.out.println("Read " + numRead + " bytes.");
+				System.out.println("\nReading #" + i);
+				int numRead = ubxPort.readBytes(readBuffer, readBuffer.length);
+				System.out.println("Read " + numRead + " bytes.");
 				
-				for (int j = 0; j < 1000; ++j)
-					System.out.print((char)in.read());
+				//for (int j = 0; j < 1000; ++j)
+					//System.out.print((char)in.read());
 			}
 			in.close();
 		}catch (Exception e) {}

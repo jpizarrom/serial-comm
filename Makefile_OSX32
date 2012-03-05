@@ -3,9 +3,9 @@ all : libSerialComm.jnilib
 	rm j_extensions_comm_SerialComm_SerialCommInputStream.h
 	rm j_extensions_comm_SerialComm_SerialCommOutputStream.h
 libSerialComm.jnilib : SerialComm_OSX.o
-	cc -dynamiclib -o OSX32/libSerialComm.jnilib OSX32/SerialComm_OSX.o -framework JavaVM
+	cc -m32 -dynamiclib -o OSX32/libSerialComm.jnilib OSX32/SerialComm_OSX.o -framework Cocoa -framework IOKit -framework JavaVM
 SerialComm_OSX.o : OSX32/SerialComm_OSX.cpp j_extensions_comm_SerialComm.h
-	cc -I"/System/Library/Frameworks/JavaVM.framework/Versions/Current/Headers" -c OSX32/SerialComm_OSX.cpp -o OSX32/SerialComm_OSX.o
+	cc -m32 -I"/System/Library/Frameworks/JavaVM.framework/Versions/Current/Headers" -c OSX32/SerialComm_OSX.cpp -o OSX32/SerialComm_OSX.o
 j_extensions_comm_SerialComm.h : j/extensions/comm/SerialComm.class
 	javah -jni j.extensions.comm.SerialComm
 clean :
