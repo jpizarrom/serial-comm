@@ -184,6 +184,11 @@ public class SerialComm
 			comPort = comPortName;
 	}
 	
+	private final void fixAndSetPortString(String portStringName)
+	{
+		portString = portStringName.substring(portStringName.lastIndexOf('\\') + 1);
+	}
+	
 	// InputStream interface class
 	private final class SerialCommInputStream extends InputStream
 	{

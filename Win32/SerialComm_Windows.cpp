@@ -20,7 +20,8 @@ JNIEXPORT jobjectArray JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JN
 
 	// Get relevant SerialComm methods
 	jmethodID serialCommConstructor = env->GetMethodID(serialCommClass, "<init>", "()V");
-	jmethodID serialCommSetPortNameMethod = env->GetMethodID(serialCommClass, "fixAndSetComPort", "(Ljava/lang/String;)V");
+	jmethodID serialCommSetPortStringMethod = env->GetMethodID(serialCommClass, "fixAndSetPortString", "(Ljava/lang/String;)V");
+	jmethodID serialCommSetComPortMethod = env->GetMethodID(serialCommClass, "fixAndSetComPort", "(Ljava/lang/String;)V");
 
 	// Enumerate serial ports on machine
 	RegOpenKeyEx(HKEY_LOCAL_MACHINE, "HARDWARE\\DEVICEMAP\\SERIALCOMM", 0, KEY_QUERY_VALUE, &keyHandle);
@@ -34,8 +35,8 @@ JNIEXPORT jobjectArray JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JN
 
 		// Create new SerialComm object containing the enumerated values
 		jobject serialCommObject = env->NewObject(serialCommClass, serialCommConstructor);
-		env->SetObjectField(serialCommObject, env->GetFieldID(serialCommClass, "portString", "Ljava/lang/String;"), env->NewStringUTF(valueName));
-		env->CallVoidMethod(serialCommObject, serialCommSetPortNameMethod, env->NewStringUTF((char*)comPort));
+		env->CallVoidMethod(serialCommObject, serialCommSetPortStringMethod, env->NewStringUTF(valueName));
+		env->CallVoidMethod(serialCommObject, serialCommSetComPortMethod, env->NewStringUTF((char*)comPort));
 
 		// Add new SerialComm object to array
 		env->SetObjectArrayElement(arrayObject, i, serialCommObject);
