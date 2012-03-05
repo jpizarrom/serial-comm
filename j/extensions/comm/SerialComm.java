@@ -8,6 +8,8 @@ import java.io.OutputStream;
 
 public class SerialComm
 {
+	static final private File tempNativeLibrary;
+	
 	// Static initializer loads correct native library for this machine
 	static
 	{
@@ -68,19 +70,20 @@ public class SerialComm
 		
 		// Get path of native library and copy file to working directory
 		//   File will be deleted on exit to ensure the correct library is loaded each time
+		tempNativeLibrary = new File(fileName);
+		tempNativeLibrary.deleteOnExit();
 		try
 		{
 			InputStream fileContents = SerialComm.class.getResourceAsStream("/" + copyFromPath + "/" + fileName);
-			File destinationFile = new File(fileName);
-			FileOutputStream destinationFileContents = new FileOutputStream(destinationFile);
-			
+			FileOutputStream destinationFileContents = new FileOutputStream(tempNativeLibrary);
 			byte transferBuffer[] = new byte[4096];
 			int numBytesRead;
+			
 			while ((numBytesRead = fileContents.read(transferBuffer)) > 0)
 				destinationFileContents.write(transferBuffer, 0, numBytesRead);
+			
 			fileContents.close();
 			destinationFileContents.close();
-			destinationFile.deleteOnExit();
 		}
 		catch (Exception e) { e.printStackTrace(); }
 		
@@ -104,33 +107,33 @@ public class SerialComm
 	static final public int TWO_SB = 3;
 	
 	// Serial Port Parameters
-	private int baudRate = 9600, byteSize = 8, stopBits = ONE_SB, parity = NO_PARITY;
-	private int readTimeout = 0, writeTimeout = 0;
-	private SerialCommInputStream inputStream = null;
-	private SerialCommOutputStream outputStream = null;
-	private String portString, comPort;
-	private long portHandle = -1l;
-	private boolean isOpened = false;
+	private volatile int baudRate = 9600, byteSize = 8, stopBits = ONE_SB, parity = NO_PARITY;
+	private volatile int readTimeout = 0, writeTimeout = 0;
+	private volatile SerialCommInputStream inputStream = null;
+	private volatile SerialCommOutputStream outputStream = null;
+	private volatile String portString, comPort;
+	private volatile long portHandle = -1l;
+	private volatile boolean isOpened = false;
 	
 	// Serial Port Setup Methods
-	public native boolean openPort();								// Opens this serial port for reading/writing
-	public native boolean closePort();								// Closes this serial port
-	private native boolean configPort();							// Changes/sets serial port parameters as defined by this class
-	private native boolean configTimeouts();						// Changes/sets serial port timeouts as defined by this class
+	public final native boolean openPort();								// Opens this serial port for reading/writing
+	public final native boolean closePort();							// Closes this serial port
+	private final native boolean configPort();							// Changes/sets serial port parameters as defined by this class
+	private final native boolean configTimeouts();						// Changes/sets serial port timeouts as defined by this class
 	
 	// Serial Port Read/Write Methods
-	public native int readBytes(byte[] buffer, long bytesToRead);
-	public native int writeBytes(byte[] buffer, long bytesToWrite);
+	public final native int readBytes(byte[] buffer, long bytesToRead);
+	public final native int writeBytes(byte[] buffer, long bytesToWrite);
 	
 	// Java methods
 	public SerialComm() {}
-	public InputStream getInputStream()
+	public final InputStream getInputStream()
 	{
 		if ((inputStream == null) && isOpened)
 			inputStream = new SerialCommInputStream();
 		return inputStream;
 	}
-	public OutputStream getOutputStream()
+	public final OutputStream getOutputStream()
 	{
 		if ((outputStream == null) && isOpened)
 			outputStream = new SerialCommOutputStream();
@@ -138,7 +141,7 @@ public class SerialComm
 	}
 	
 	// Setters
-	public void setComPortParameters(int newBaudRate, int newByteSize, int newStopBits, int newParity)
+	public final void setComPortParameters(int newBaudRate, int newByteSize, int newStopBits, int newParity)
 	{
 		baudRate = newBaudRate;
 		byteSize = newByteSize;
@@ -146,28 +149,28 @@ public class SerialComm
 		parity = newParity;
 		configPort();
 	}
-	public void setComPortTimeouts(int newReadTimeout, int newWriteTimeout)
+	public final void setComPortTimeouts(int newReadTimeout, int newWriteTimeout)
 	{
 		readTimeout = newReadTimeout;
 		writeTimeout = newWriteTimeout;
 		configTimeouts();
 	}
-	public void setBaudRate(int newBaudRate) { baudRate = newBaudRate; configPort(); }
-	public void setByteSize(int newByteSize) { byteSize = newByteSize; configPort(); }
-	public void setNumStopBits(int newStopBits) { stopBits = newStopBits; configPort(); }
-	public void setParity(int newParity) { parity = newParity; configPort(); }
+	public final void setBaudRate(int newBaudRate) { baudRate = newBaudRate; configPort(); }
+	public final void setByteSize(int newByteSize) { byteSize = newByteSize; configPort(); }
+	public final void setNumStopBits(int newStopBits) { stopBits = newStopBits; configPort(); }
+	public final void setParity(int newParity) { parity = newParity; configPort(); }
 	
 	// Getters
-	public String getDescriptivePortName() { return portString.trim(); }
-	public String getSystemPortName() { return comPort.substring(comPort.lastIndexOf('\\')+1); }
-	public int getBaudRate() { return baudRate; }
-	public int getByteSize() { return byteSize; }
-	public int getNumStopBits() { return stopBits; }
-	public int getParity() { return parity; }
-	public int getReadTimeout() { return readTimeout; }
-	public int getWriteTimeout() { return writeTimeout; }
+	public final String getDescriptivePortName() { return portString.trim(); }
+	public final String getSystemPortName() { return comPort.substring(comPort.lastIndexOf('\\')+1); }
+	public final int getBaudRate() { return baudRate; }
+	public final int getByteSize() { return byteSize; }
+	public final int getNumStopBits() { return stopBits; }
+	public final int getParity() { return parity; }
+	public final int getReadTimeout() { return readTimeout; }
+	public final int getWriteTimeout() { return writeTimeout; }
 	
-	private void fixAndSetComPort(String comPortName)
+	private final void fixAndSetComPort(String comPortName)
 	{
 		comPort = "\\\\.\\";
 		if (comPortName.charAt(0) != '\\')
@@ -177,10 +180,10 @@ public class SerialComm
 	}
 	
 	// InputStream interface class
-	private class SerialCommInputStream extends InputStream
+	private final class SerialCommInputStream extends InputStream
 	{
 		@Override
-		public int available() throws IOException
+		public final int available() throws IOException
 		{
 			if (!isOpened)
 				throw new IOException("This port appears to have been shutdown or disconnected.");
@@ -189,7 +192,7 @@ public class SerialComm
 		}
 		
 		@Override
-		public int read() throws IOException
+		public final int read() throws IOException
 		{
 			if (!isOpened)
 				throw new IOException("This port appears to have been shutdown or disconnected.");
@@ -199,7 +202,7 @@ public class SerialComm
 		}
 		
 		@Override
-		public int read(byte[] b) throws IOException
+		public final int read(byte[] b) throws IOException
 		{
 			if (!isOpened)
 				throw new IOException("This port appears to have been shutdown or disconnected.");
@@ -209,7 +212,7 @@ public class SerialComm
 		}
 		
 		@Override
-		public int read(byte[] b, int off, int len) throws IOException
+		public final int read(byte[] b, int off, int len) throws IOException
 		{
 			if (!isOpened)
 				throw new IOException("This port appears to have been shutdown or disconnected.");
@@ -225,7 +228,7 @@ public class SerialComm
 		}
 		
 		@Override
-		public long skip(long n) throws IOException
+		public final long skip(long n) throws IOException
 		{
 			if (!isOpened)
 				throw new IOException("This port appears to have been shutdown or disconnected.");
@@ -236,10 +239,10 @@ public class SerialComm
 	}
 	
 	// OutputStream interface class
-	private class SerialCommOutputStream extends OutputStream
+	private final class SerialCommOutputStream extends OutputStream
 	{
 		@Override
-		public void write(int b) throws IOException
+		public final void write(int b) throws IOException
 		{
 			if (!isOpened)
 				throw new IOException("This port appears to have been shutdown or disconnected.");
@@ -251,7 +254,7 @@ public class SerialComm
 		}
 		
 		@Override
-		public void write(byte[] b) throws IOException
+		public final void write(byte[] b) throws IOException
 		{
 			if (!isOpened)
 				throw new IOException("This port appears to have been shutdown or disconnected.");
@@ -260,7 +263,7 @@ public class SerialComm
 		}
 		
 		@Override
-		public void write(byte[] b, int off, int len) throws IOException
+		public final void write(byte[] b, int off, int len) throws IOException
 		{
 			if (!isOpened)
 				throw new IOException("This port appears to have been shutdown or disconnected.");
