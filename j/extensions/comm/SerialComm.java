@@ -443,7 +443,7 @@ public class SerialComm
 				throw new IOException("This port appears to have been shutdown or disconnected.");
 			
 			byte[] buffer = new byte[1];
-			return (readBytes(buffer, 1l) > 0) ? buffer[0] : -1;
+			return (readBytes(buffer, 1l) > 0) ? ((int)buffer[0] & 0x000000FF) : -1;
 		}
 		
 		@Override
@@ -526,26 +526,36 @@ public class SerialComm
 		System.out.println("Ports:");
 		for (int i = 0; i < ports.length; ++i)
 			System.out.println("   " + ports[i].getSystemPortName() + ": " + ports[i].getDescriptivePortName());
-		SerialComm ubxPort = ports[1];
+		SerialComm ubxPort = ports[2];
 		
 		byte[] readBuffer = new byte[2048];
 		System.out.println("Opening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort());
-		ubxPort.setComPortTimeouts(500, 0);
+		//ubxPort.setComPortTimeouts(500, 0);
 		InputStream in = ubxPort.getInputStream();
 		try
 		{
-			for (int i = 0; i < 3; ++i)
-			{
-				System.out.println("\nReading #" + i);
-				int numRead = ubxPort.readBytes(readBuffer, readBuffer.length);
-				System.out.println("Read " + numRead + " bytes.");
+			//for (int i = 0; i < 3; ++i)
+			//{
+				//System.out.println("\nReading #" + i);
+				//int numRead = ubxPort.readBytes(readBuffer, readBuffer.length);
+				//System.out.println("Read " + numRead + " bytes.");
 				
-				//for (int j = 0; j < 1000; ++j)
-					//System.out.print((char)in.read());
-			}
+				for (int j = 0; j < 1000; ++j)
+					System.out.print((char)in.read());
+			//}
 			in.close();
-		}catch (Exception e) {}
+		} catch (Exception e) { e.printStackTrace(); }
 		
-		ubxPort.closePort();
+		System.out.println("\n\nClosing " + ubxPort.getDescriptivePortName() + ": " + ubxPort.closePort());
+		System.out.println("Reopening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort() + "\n");
+		in = ubxPort.getInputStream();
+		try
+		{
+			for (int j = 0; j < 1000; ++j)
+				System.out.print((char)in.read());
+			in.close();
+		} catch (Exception e) { e.printStackTrace(); }
+		
+		System.out.println("\nClosing " + ubxPort.getDescriptivePortName() + ": " + ubxPort.closePort());
 	}*/
 }
