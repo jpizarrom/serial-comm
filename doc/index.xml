@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?> 
 <Module>
   <ModulePrefs title="SerialComm Javadoc" />
-  <Content type="html" href="http://serial-comm.googlecode.com/svn/trunk/doc/j/extensions/comm/package-summary.html" />
+  <Content type="html" href="http://serial-comm.googlecode.com/svn/trunk/doc/index.html" />
 </Module>
