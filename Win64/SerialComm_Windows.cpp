@@ -86,7 +86,7 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configPort(JNIEnv *
 	BYTE byteSize = (BYTE)env->GetIntField(obj, env->GetFieldID(serialCommClass, "byteSize", "I"));
 	int stopBitsInt = env->GetIntField(obj, env->GetFieldID(serialCommClass, "stopBits", "I"));
 	int parityInt = env->GetIntField(obj, env->GetFieldID(serialCommClass, "parity", "I"));
-	BYTE stopBits = (stopBitsInt == j_extensions_comm_SerialComm_ONE_SB) ? ONESTOPBIT : (stopBitsInt == j_extensions_comm_SerialComm_ONE_POINT_FIVE_SB) ? ONE5STOPBITS : TWOSTOPBITS;
+	BYTE stopBits = (stopBitsInt == j_extensions_comm_SerialComm_ONE_STOP_BIT) ? ONESTOPBIT : (stopBitsInt == j_extensions_comm_SerialComm_ONE_POINT_FIVE_STOP_BITS) ? ONE5STOPBITS : TWOSTOPBITS;
 	BYTE parity = (parityInt == j_extensions_comm_SerialComm_NO_PARITY) ? NOPARITY : (parityInt == j_extensions_comm_SerialComm_ODD_PARITY) ? ODDPARITY : (parityInt == j_extensions_comm_SerialComm_EVEN_PARITY) ? EVENPARITY : (parityInt == j_extensions_comm_SerialComm_MARK_PARITY) ? MARKPARITY : SPACEPARITY;
 
 	// Retrieve existing port configuration
