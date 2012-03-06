@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project default="javadoc">
     <target name="javadoc">
-        <javadoc access="public" author="true" classpath="." destdir="doc" doctitle="SerialComm Library Reference" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" packagenames="j.extensions.comm" source="1.6" sourcepath="." splitindex="true" use="true" version="true">
+        <javadoc access="public" author="true" classpath="." destdir="doc" doctitle="SerialComm Library Reference" nodeprecated="true" nodeprecatedlist="true" noindex="true" nonavbar="false" notree="true" packagenames="j.extensions.comm" source="1.6" sourcepath="." splitindex="false" use="false" version="true">
             <link href="http://download.oracle.com/javase/7/docs/api/"/>
         </javadoc>
     </target>
