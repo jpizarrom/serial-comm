@@ -579,7 +579,7 @@ public class SerialComm
 		}
 	}
 	
-	static public void main(String[] args)
+	/*static public void main(String[] args)
 	{
 		SerialComm[] ports = SerialComm.getCommPorts();
 		System.out.println("Ports:");
@@ -616,5 +616,5 @@ public class SerialComm
 		} catch (Exception e) { e.printStackTrace(); }
 		
 		System.out.println("\nClosing " + ubxPort.getDescriptivePortName() + ": " + ubxPort.closePort());
-	}
+	}*/
 }
