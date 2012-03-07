@@ -132,9 +132,16 @@ public class SerialComm
 	static final public int ONE_POINT_FIVE_STOP_BITS = 2;
 	static final public int TWO_STOP_BITS = 3;
 	
+	// Flow Control constants
+	static final public int FLOW_CONTROL_CTS_ENABLED = 0x00000001;
+	static final public int FLOW_CONTROL_DSR_ENABLED = 0x00000010;
+	static final public int FLOW_CONTROL_DTR_ENABLED = 0x00000100;
+	static final public int FLOW_CONTROL_RTS_ENABLED = 0x00001000;
+	static final public int FLOW_CONTROL_XONXOFF_ENABLED = 0x00010000;
+	
 	// Serial Port Parameters
 	private volatile int baudRate = 9600, byteSize = 8, stopBits = ONE_STOP_BIT, parity = NO_PARITY;
-	private volatile int readTimeout = 0, writeTimeout = 0;
+	private volatile int readTimeout = 0, writeTimeout = 0, flowControl = 0;
 	private volatile SerialCommInputStream inputStream = null;
 	private volatile SerialCommOutputStream outputStream = null;
 	private volatile String portString, comPort;
@@ -155,6 +162,7 @@ public class SerialComm
 	
 	// Serial Port Setup Methods
 	private final native boolean configPort();							// Changes/sets serial port parameters as defined by this class
+	private final native boolean configFlowControl();					// Changes/sets flow control parameters as defined by this class
 	private final native boolean configTimeouts();						// Changes/sets serial port timeouts as defined by this class
 	
 	/**
@@ -314,6 +322,33 @@ public class SerialComm
 	public final void setNumStopBits(int newStopBits) { stopBits = newStopBits; configPort(); }
 	
 	/**
+	 * Specifies what kind of flow control to enable for this serial port.
+	 * <p>
+	 * By default, no flow control is enabled.  Built-in flow control constants should be used
+	 * in this method ({@link #FLOW_CONTROL_RTS_ENABLED}, {@link #FLOW_CONTROL_CTS_ENABLED}, {@link #FLOW_CONTROL_DTR_ENABLED},
+	 * {@link #FLOW_CONTROL_DSR_ENABLED}, {@link #FLOW_CONTROL_XONXOFF_ENABLED}), and can be OR'ed together.
+	 * <p>
+	 * Valid flow control configurations are:
+	 * <p>
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CTS: {@link #FLOW_CONTROL_CTS_ENABLED}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RTS/CTS: {@link #FLOW_CONTROL_RTS_ENABLED} | {@link #FLOW_CONTROL_CTS_ENABLED}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DSR: {@link #FLOW_CONTROL_DSR_ENABLED}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DTR/DSR: {@link #FLOW_CONTROL_DTR_ENABLED} | {@link #FLOW_CONTROL_DSR_ENABLED}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;XOn/XOff: {@link #FLOW_CONTROL_XONXOFF_ENABLED}
+	 * <p>
+	 * Note that only one valid flow control configuration can be used at any time.  For example, attempting to use both XOn/XOff
+	 * <b>and</b> RTS/CTS will most likely result in an unusable serial port.
+	 * 
+	 * @param newFlowControlSettings The desired type of flow control to enable for this serial port.
+	 * @see #FLOW_CONTROL_RTS_ENABLED
+	 * @see #FLOW_CONTROL_CTS_ENABLED
+	 * @see #FLOW_CONTROL_DTR_ENABLED
+	 * @see #FLOW_CONTROL_DSR_ENABLED
+	 * @see #FLOW_CONTROL_XONXOFF_ENABLED
+	 */
+	public final void setFlowControl(int newFlowControlSettings) { flowControl = newFlowControlSettings; configFlowControl(); }
+	
+	/**
 	 * Sets the desired parity error-detection scheme to be used.
 	 * <p>
 	 * The parity parameter specifies how error detection is carried out.  The built-in parity constants should be used.
@@ -412,6 +447,27 @@ public class SerialComm
 	 * @return The number of milliseconds of inactivity to tolerate before returning from a {@link #writeBytes(byte[],long)} call.
 	 */
 	public final int getWriteTimeout() { return writeTimeout; }
+	
+	/**
+	 * Returns the flow control settings enabled on this serial port.
+	 * <p>
+	 * The integer result should be masked with the built-in flow control constants to test if the desired setting is enabled.
+	 * Valid flow control configurations are:
+	 * <p>
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CTS: {@link #FLOW_CONTROL_CTS_ENABLED}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RTS/CTS: {@link #FLOW_CONTROL_RTS_ENABLED} | {@link #FLOW_CONTROL_CTS_ENABLED}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DSR: {@link #FLOW_CONTROL_DSR_ENABLED}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DTR/DSR: {@link #FLOW_CONTROL_DTR_ENABLED} | {@link #FLOW_CONTROL_DSR_ENABLED}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;XOn/XOff: {@link #FLOW_CONTROL_XONXOFF_ENABLED}
+	 * 
+	 * @return The flow control settings enabled on this serial port.
+	 * @see #FLOW_CONTROL_RTS_ENABLED
+	 * @see #FLOW_CONTROL_CTS_ENABLED
+	 * @see #FLOW_CONTROL_DTR_ENABLED
+	 * @see #FLOW_CONTROL_DSR_ENABLED
+	 * @see #FLOW_CONTROL_XONXOFF_ENABLED
+	 */
+	public final int getFlowControlSettings() { return flowControl; }
 	
 	private final void fixAndSetComPort(String comPortName)
 	{

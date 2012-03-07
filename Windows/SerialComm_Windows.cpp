@@ -61,7 +61,8 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_openPort(JNIEnv *en
 		env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), (jlong)hSerial);
 
 		// Configure the port parameters and timeouts
-		if (Java_j_extensions_comm_SerialComm_configPort(env, obj) && Java_j_extensions_comm_SerialComm_configTimeouts(env, obj))
+		if (Java_j_extensions_comm_SerialComm_configPort(env, obj) && Java_j_extensions_comm_SerialComm_configFlowControl(env, obj) &&
+				Java_j_extensions_comm_SerialComm_configTimeouts(env, obj))
 			env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_TRUE);
 		else
 		{
@@ -80,7 +81,7 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_openPort(JNIEnv *en
 JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configPort(JNIEnv *env, jobject obj)
 {
 	DCB dcbSerialParams = {0};
-	dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
+	dcbSerialParams.DCBlength = sizeof(DCB);
 	jclass serialCommClass = env->GetObjectClass(obj);
 
 	// Get port parameters from Java class
@@ -103,10 +104,41 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configPort(JNIEnv *
 	dcbSerialParams.StopBits = stopBits;
 	dcbSerialParams.Parity = parity;
 	dcbSerialParams.fParity = isParity;
+	dcbSerialParams.fBinary = TRUE;
 	dcbSerialParams.fAbortOnError = FALSE;
-	dcbSerialParams.fOutxDsrFlow = FALSE;
-	dcbSerialParams.fDsrSensitivity = FALSE;
-	dcbSerialParams.fDtrControl = DTR_CONTROL_ENABLE;
+
+	// Apply changes
+	return SetCommState(serialHandle, &dcbSerialParams);
+}
+
+JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configFlowControl(JNIEnv *env, jobject obj)
+{
+	DCB dcbSerialParams = {0};
+	dcbSerialParams.DCBlength = sizeof(DCB);
+	jclass serialCommClass = env->GetObjectClass(obj);
+
+	// Get flow control parameters from Java class
+	HANDLE serialHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(serialCommClass, "portHandle", "J"));
+	int flowControl = env->GetIntField(obj, env->GetFieldID(serialCommClass, "flowControl", "I"));
+	BOOL CTSEnabled = (((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_CTS_ENABLED) > 0) ||
+			((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_RTS_ENABLED) > 0));
+	BOOL DSREnabled = (((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_DSR_ENABLED) > 0) ||
+			((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_DTR_ENABLED) > 0));
+	BYTE DTRValue = ((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_DTR_ENABLED) > 0) ? DTR_CONTROL_HANDSHAKE : DTR_CONTROL_ENABLE;
+	BYTE RTSValue = ((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_RTS_ENABLED) > 0) ? RTS_CONTROL_HANDSHAKE : RTS_CONTROL_ENABLE;
+	BOOL XonXoffEnabled = ((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_XONXOFF_ENABLED) > 0);
+
+	// Retrieve existing port configuration
+	if (!GetCommState(serialHandle, &dcbSerialParams))
+		return JNI_FALSE;
+
+	// Set updated port parameters
+	dcbSerialParams.fOutxCtsFlow = CTSEnabled;
+	dcbSerialParams.fOutxDsrFlow = DSREnabled;
+	dcbSerialParams.fDtrControl = DTRValue;
+	dcbSerialParams.fDsrSensitivity = DSREnabled;
+	dcbSerialParams.fOutX = XonXoffEnabled;
+	dcbSerialParams.fInX = XonXoffEnabled;
 
 	// Apply changes
 	return SetCommState(serialHandle, &dcbSerialParams);
