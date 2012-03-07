@@ -2,7 +2,7 @@ all : libSerialComm.jnilib
 	rm j_extensions_comm_SerialComm_SerialCommInputStream.h
 	rm j_extensions_comm_SerialComm_SerialCommOutputStream.h
 	rm OSX/SerialComm_OSX.o
-	jar cmf MANIFEST.MF SerialComm.jar j/extensions/comm/*.class Linux OSX/x86/libSerialComm.jnilib OSX/x86_64/libSerialComm.jnilib Windows/x86/SerialComm.dll Windows/x86_64/SerialComm.dll
+	jar cmf MANIFEST.MF SerialComm.jar j/extensions/comm/*.class Linux/x86/* Linux/x86_64/* OSX/x86/* OSX/x86_64/* Windows/x86/* Windows/x86_64/*
 libSerialComm.jnilib : SerialComm_OSX.o
 	cc -m64 -dynamiclib -o OSX/x86_64/libSerialComm.jnilib OSX/SerialComm_OSX.o -framework Cocoa -framework IOKit -framework JavaVM
 SerialComm_OSX.o : OSX/SerialComm_OSX.cpp j_extensions_comm_SerialComm.h
