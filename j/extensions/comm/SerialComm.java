@@ -27,9 +27,9 @@ public class SerialComm
 		{
 			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
 					(new File("C:\\Program Files (x86)").exists()))
-				copyFromPath = "Win64";
+				copyFromPath = "Windows/x86_64";
 			else
-				copyFromPath = "Win32";
+				copyFromPath = "Windows/x86";
 			fileName = "SerialComm.dll";
 		}
 		else if (OS.indexOf("mac") >= 0)
@@ -45,9 +45,9 @@ public class SerialComm
 			
 			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
 					(resultString.indexOf("64") >= 0))
-				copyFromPath = "OSX64";
+				copyFromPath = "OSX/x86_64";
 			else
-				copyFromPath = "OSX32";
+				copyFromPath = "OSX/x86";
 			fileName = "libSerialComm.jnilib";
 		}
 		else if ((OS.indexOf("nix") >= 0) || (OS.indexOf("nux") >= 0))
@@ -63,10 +63,10 @@ public class SerialComm
 			
 			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
 					(resultString.indexOf("64") >= 0))
-				copyFromPath = "Linux64";
+				copyFromPath = "Linux/x86_64";
 			else
-				copyFromPath = "Linux32";
-			fileName = "";
+				copyFromPath = "Linux/x86";
+			fileName = "libSerialComm.so";
 		}
 		else
 		{
@@ -79,6 +79,9 @@ public class SerialComm
 		if (tempNativeLibrary.exists())
 			tempNativeLibrary.delete();
 		tempNativeLibrary = new File("libSerialComm.jnilib");
+		if (tempNativeLibrary.exists())
+			tempNativeLibrary.delete();
+		tempNativeLibrary = new File ("libSerialComm.so");
 		if (tempNativeLibrary.exists())
 			tempNativeLibrary.delete();
 		
@@ -520,7 +523,7 @@ public class SerialComm
 		}
 	}
 	
-	/*static public void main(String[] args)
+	static public void main(String[] args)
 	{
 		SerialComm[] ports = SerialComm.getCommPorts();
 		System.out.println("Ports:");
@@ -557,5 +560,5 @@ public class SerialComm
 		} catch (Exception e) { e.printStackTrace(); }
 		
 		System.out.println("\nClosing " + ubxPort.getDescriptivePortName() + ": " + ubxPort.closePort());
-	}*/
+	}
 }
