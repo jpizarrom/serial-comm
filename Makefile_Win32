@@ -1,16 +1,16 @@
 all : libSerialComm.dll
 	del j_extensions_comm_SerialComm_SerialCommInputStream.h
 	del j_extensions_comm_SerialComm_SerialCommOutputStream.h
-	del Win32\SerialComm_Windows.o
-	jar cmf MANIFEST.MF SerialComm.jar j/extensions/comm/*.class Linux32 Linux64 OSX32/libSerialComm.jnilib OSX64/libSerialComm.jnilib Win32/SerialComm.dll Win64/SerialComm.dll
+	del Windows\SerialComm_Windows.o
+	jar cmf MANIFEST.MF SerialComm.jar j/extensions/comm/*.class Linux OSX/x86/libSerialComm.jnilib OSX/x86_64/libSerialComm.jnilib Windows/x86/SerialComm.dll Windows/x86_64/SerialComm.dll
 libSerialComm.dll : SerialComm_Windows.o
-	gcc -shared -o Win32\SerialComm.dll Win32\SerialComm_Windows.o
-SerialComm_Windows.o : Win32\SerialComm_Windows.cpp j_extensions_comm_SerialComm.h
-	gcc -I"C:\Program Files\Java\jdk1.7.0\include" -I"C:\Program Files\Java\jdk1.7.0\include\win32" -c Win32\SerialComm_Windows.cpp -o Win32\SerialComm_Windows.o
+	gcc -shared -o Windows\x86\SerialComm.dll Windows\SerialComm_Windows.o
+SerialComm_Windows.o : Windows\SerialComm_Windows.cpp j_extensions_comm_SerialComm.h
+	gcc -I"C:\Program Files\Java\jdk1.7.0\include" -I"C:\Program Files\Java\jdk1.7.0\include\win32" -c Windows\SerialComm_Windows.cpp -o Windows\SerialComm_Windows.o
 j_extensions_comm_SerialComm.h : j/extensions/comm/SerialComm.class
 	javah -jni j.extensions.comm.SerialComm
 clean :
 	del j_extensions_comm_SerialComm.h
 	del j_extensions_comm_SerialComm_SerialCommInputStream.h
 	del j_extensions_comm_SerialComm_SerialCommOutputStream.h
-	del Win32\SerialComm_Windows.o
+	del Windows\SerialComm_Windows.o
