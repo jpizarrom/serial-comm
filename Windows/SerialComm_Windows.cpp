@@ -50,15 +50,16 @@ JNIEXPORT jobjectArray JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JN
 
 JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_openPort(JNIEnv *env, jobject obj)
 {
-	HANDLE hSerial;
-	jstring portNameJString = (jstring)env->GetObjectField(obj, env->GetFieldID(env->GetObjectClass(obj), "comPort", "Ljava/lang/String;"));
+	jclass serialCommClass = env->GetObjectClass(obj);
+	jstring portNameJString = (jstring)env->GetObjectField(obj, env->GetFieldID(serialCommClass, "comPort", "Ljava/lang/String;"));
+	HANDLE serialPortHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(serialCommClass, "portHandle", "J"));
 	const char *portName = env->GetStringUTFChars(portNameJString, NULL);
 
 	// Try to open existing serial port with read/write access
-	if ((hSerial = CreateFile(portName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, 0)) != INVALID_HANDLE_VALUE)
+	if ((serialPortHandle = CreateFile(portName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL)) != INVALID_HANDLE_VALUE)
 	{
 		// Set port handle in Java structure
-		env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), (jlong)hSerial);
+		env->SetLongField(obj, env->GetFieldID(serialCommClass, "portHandle", "J"), (jlong)serialPortHandle);
 
 		// Configure the port parameters and timeouts
 		if (Java_j_extensions_comm_SerialComm_configPort(env, obj) && Java_j_extensions_comm_SerialComm_configFlowControl(env, obj) &&
@@ -67,15 +68,15 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_openPort(JNIEnv *en
 		else
 		{
 			// Close the port if there was a problem setting the parameters
-			CloseHandle(hSerial);
-			hSerial = INVALID_HANDLE_VALUE;
+			CloseHandle(serialPortHandle);
+			serialPortHandle = INVALID_HANDLE_VALUE;
 			env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), (jlong)INVALID_HANDLE_VALUE);
 			env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
 		}
 	}
 
 	env->ReleaseStringUTFChars(portNameJString, portName);
-	return (hSerial == INVALID_HANDLE_VALUE) ? JNI_FALSE : JNI_TRUE;
+	return (serialPortHandle == INVALID_HANDLE_VALUE) ? JNI_FALSE : JNI_TRUE;
 }
 
 JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configPort(JNIEnv *env, jobject obj)
@@ -85,9 +86,9 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configPort(JNIEnv *
 	jclass serialCommClass = env->GetObjectClass(obj);
 
 	// Get port parameters from Java class
-	HANDLE serialHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(serialCommClass, "portHandle", "J"));
+	HANDLE serialPortHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(serialCommClass, "portHandle", "J"));
 	DWORD baudRate = (DWORD)env->GetIntField(obj, env->GetFieldID(serialCommClass, "baudRate", "I"));
-	BYTE byteSize = (BYTE)env->GetIntField(obj, env->GetFieldID(serialCommClass, "byteSize", "I"));
+	BYTE byteSize = (BYTE)env->GetIntField(obj, env->GetFieldID(serialCommClass, "dataBits", "I"));
 	int stopBitsInt = env->GetIntField(obj, env->GetFieldID(serialCommClass, "stopBits", "I"));
 	int parityInt = env->GetIntField(obj, env->GetFieldID(serialCommClass, "parity", "I"));
 	BYTE stopBits = (stopBitsInt == j_extensions_comm_SerialComm_ONE_STOP_BIT) ? ONESTOPBIT : (stopBitsInt == j_extensions_comm_SerialComm_ONE_POINT_FIVE_STOP_BITS) ? ONE5STOPBITS : TWOSTOPBITS;
@@ -95,7 +96,7 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configPort(JNIEnv *
 	BOOL isParity = (parityInt == j_extensions_comm_SerialComm_NO_PARITY) ? FALSE : TRUE;
 
 	// Retrieve existing port configuration
-	if (!GetCommState(serialHandle, &dcbSerialParams))
+	if (!GetCommState(serialPortHandle, &dcbSerialParams))
 		return JNI_FALSE;
 
 	// Set updated port parameters
@@ -108,7 +109,7 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configPort(JNIEnv *
 	dcbSerialParams.fAbortOnError = FALSE;
 
 	// Apply changes
-	return SetCommState(serialHandle, &dcbSerialParams);
+	return SetCommState(serialPortHandle, &dcbSerialParams);
 }
 
 JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configFlowControl(JNIEnv *env, jobject obj)
@@ -116,9 +117,9 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configFlowControl(J
 	DCB dcbSerialParams = {0};
 	dcbSerialParams.DCBlength = sizeof(DCB);
 	jclass serialCommClass = env->GetObjectClass(obj);
+	HANDLE serialPortHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(serialCommClass, "portHandle", "J"));
 
 	// Get flow control parameters from Java class
-	HANDLE serialHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(serialCommClass, "portHandle", "J"));
 	int flowControl = env->GetIntField(obj, env->GetFieldID(serialCommClass, "flowControl", "I"));
 	BOOL CTSEnabled = (((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_CTS_ENABLED) > 0) ||
 			((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_RTS_ENABLED) > 0));
@@ -126,22 +127,32 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configFlowControl(J
 			((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_DTR_ENABLED) > 0));
 	BYTE DTRValue = ((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_DTR_ENABLED) > 0) ? DTR_CONTROL_HANDSHAKE : DTR_CONTROL_ENABLE;
 	BYTE RTSValue = ((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_RTS_ENABLED) > 0) ? RTS_CONTROL_HANDSHAKE : RTS_CONTROL_ENABLE;
-	BOOL XonXoffEnabled = ((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_XONXOFF_ENABLED) > 0);
+	BOOL XonXoffInEnabled = ((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_XONXOFF_IN_ENABLED) > 0);
+	BOOL XonXoffOutEnabled = ((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_XONXOFF_OUT_ENABLED) > 0);
 
 	// Retrieve existing port configuration
-	if (!GetCommState(serialHandle, &dcbSerialParams))
+	if (!GetCommState(serialPortHandle, &dcbSerialParams))
 		return JNI_FALSE;
 
 	// Set updated port parameters
+	dcbSerialParams.fRtsControl = RTSValue;
 	dcbSerialParams.fOutxCtsFlow = CTSEnabled;
 	dcbSerialParams.fOutxDsrFlow = DSREnabled;
 	dcbSerialParams.fDtrControl = DTRValue;
 	dcbSerialParams.fDsrSensitivity = DSREnabled;
-	dcbSerialParams.fOutX = XonXoffEnabled;
-	dcbSerialParams.fInX = XonXoffEnabled;
+	dcbSerialParams.fOutX = XonXoffOutEnabled;
+	dcbSerialParams.fInX = XonXoffInEnabled;
+	dcbSerialParams.fTXContinueOnXoff = TRUE;
+	dcbSerialParams.fErrorChar = FALSE;
+	dcbSerialParams.fNull = FALSE;
+	dcbSerialParams.fAbortOnError = FALSE;
+	dcbSerialParams.XonLim = 2048;
+	dcbSerialParams.XoffLim = 512;
+	dcbSerialParams.XonChar = (char)17;
+	dcbSerialParams.XoffChar = (char)19;
 
 	// Apply changes
-	return SetCommState(serialHandle, &dcbSerialParams);
+	return SetCommState(serialPortHandle, &dcbSerialParams);
 }
 
 JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configTimeouts(JNIEnv *env, jobject obj)
@@ -166,9 +177,13 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configTimeouts(JNIE
 
 JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_closePort(JNIEnv *env, jobject obj)
 {
+	// Purge any outstanding port operations
+	HANDLE serialPortHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
+	PurgeComm(serialPortHandle, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR);
+
 	// Close port
-	HANDLE portHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
-	BOOL retVal = CloseHandle(portHandle);
+	BOOL retVal = CloseHandle(serialPortHandle);
+	serialPortHandle = INVALID_HANDLE_VALUE;
 	env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), (jlong)INVALID_HANDLE_VALUE);
 	env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
 
@@ -177,56 +192,102 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_closePort(JNIEnv *e
 
 JNIEXPORT jint JNICALL Java_j_extensions_comm_SerialComm_readBytes(JNIEnv *env, jobject obj, jbyteArray buffer, jlong bytesToRead)
 {
-	signed char *readBuffer = (signed char*)malloc(bytesToRead);
-	DWORD numBytesRead = 0;
-	BOOL result;
+	HANDLE serialPortHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
+    OVERLAPPED overlappedStruct = {0};
+    overlappedStruct.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    jbyte *readBuffer = env->GetByteArrayElements(buffer, 0);
+    DWORD numBytesRead = 0;
+    BOOL result;
 
-	// Cache serial handle so we don't have to fetch it for every read/write
-	HANDLE serialPortHandle = INVALID_HANDLE_VALUE;
-	if (serialPortHandle == INVALID_HANDLE_VALUE)
-		serialPortHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
+    // Read from serial port
+    if ((result = ReadFile(serialPortHandle, readBuffer, bytesToRead, &numBytesRead, &overlappedStruct)) != FALSE)	// Immediately successful
+        env->ReleaseByteArrayElements(buffer, readBuffer, 0);
+    else if (GetLastError() != ERROR_IO_PENDING)		// Problem occurred
+    {
+    	// Problem reading, close port
+    	CloseHandle(serialPortHandle);
+    	serialPortHandle = INVALID_HANDLE_VALUE;
+    	env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), (jlong)INVALID_HANDLE_VALUE);
+    	env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
+    }
+    else		// Pending read operation
+    {
+    	switch (WaitForSingleObject(overlappedStruct.hEvent, INFINITE))
+    	{
+    		case WAIT_OBJECT_0:
+    			if ((result = GetOverlappedResult(serialPortHandle, &overlappedStruct, &numBytesRead, FALSE)) != FALSE)
+    				env->ReleaseByteArrayElements(buffer, readBuffer, 0);
+    			else
+    			{
+    				// Problem reading, close port
+    				CloseHandle(serialPortHandle);
+    				serialPortHandle = INVALID_HANDLE_VALUE;
+    				env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), (jlong)INVALID_HANDLE_VALUE);
+    				env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
+    			}
+    			break;
+    		default:
+    			// Problem reading, close port
+    			CloseHandle(serialPortHandle);
+    			serialPortHandle = INVALID_HANDLE_VALUE;
+    			env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), (jlong)INVALID_HANDLE_VALUE);
+    			env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
+    			break;
+    	}
+    }
 
-	// Read from port
-	if ((result = ReadFile(serialPortHandle, readBuffer, bytesToRead, &numBytesRead, NULL)) != FALSE)
-		env->SetByteArrayRegion(buffer, 0, numBytesRead, readBuffer);
-	else
-	{
-		// Problem reading, close port
-		CloseHandle(serialPortHandle);
-		serialPortHandle = INVALID_HANDLE_VALUE;
-		env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), (jlong)INVALID_HANDLE_VALUE);
-		env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
-	}
-
-	// Return number of bytes read if successful
-	free(readBuffer);
+    // Return number of bytes read if successful
+    CloseHandle(overlappedStruct.hEvent);
 	return (result == TRUE) ? numBytesRead : -1;
 }
 
 JNIEXPORT jint JNICALL Java_j_extensions_comm_SerialComm_writeBytes(JNIEnv *env, jobject obj, jbyteArray buffer, jlong bytesToWrite)
 {
-	signed char *writeBuffer = (signed char*)malloc(bytesToWrite);
+	HANDLE serialPortHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
+	OVERLAPPED overlappedStruct = {0};
+	overlappedStruct.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	jbyte *writeBuffer = env->GetByteArrayElements(buffer, 0);
 	DWORD numBytesWritten = 0;
 	BOOL result;
 
-	// Cache serial handle so we don't have to fetch it for every read/write
-	HANDLE serialPortHandle = INVALID_HANDLE_VALUE;
-	if (serialPortHandle == INVALID_HANDLE_VALUE)
-		serialPortHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
-
 	// Write to port
-	env->GetByteArrayRegion(buffer, 0, bytesToWrite, writeBuffer);
-	if ((result = WriteFile(serialPortHandle, writeBuffer, bytesToWrite, &numBytesWritten, NULL)) == FALSE)
+	if ((result = WriteFile(serialPortHandle, writeBuffer, bytesToWrite, &numBytesWritten, &overlappedStruct)) == FALSE)
 	{
-		// Problem writing, close port
-		CloseHandle(serialPortHandle);
-		serialPortHandle = INVALID_HANDLE_VALUE;
-		env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), (jlong)INVALID_HANDLE_VALUE);
-		env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
+		if (GetLastError() != ERROR_IO_PENDING)
+		{
+			// Problem writing, close port
+			CloseHandle(serialPortHandle);
+			serialPortHandle = INVALID_HANDLE_VALUE;
+			env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), (jlong)INVALID_HANDLE_VALUE);
+			env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
+		}
+		else
+		{
+			switch (WaitForSingleObject(overlappedStruct.hEvent, INFINITE))
+			{
+				case WAIT_OBJECT_0:
+					if ((result = GetOverlappedResult(serialPortHandle, &overlappedStruct, &numBytesWritten, FALSE)) == FALSE)
+			    	{
+			    		// Problem reading, close port
+			    		CloseHandle(serialPortHandle);
+			    		serialPortHandle = INVALID_HANDLE_VALUE;
+			    		env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), (jlong)INVALID_HANDLE_VALUE);
+			    		env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
+			    	}
+			    	break;
+			    default:
+			    	// Problem reading, close port
+			    	CloseHandle(serialPortHandle);
+			    	serialPortHandle = INVALID_HANDLE_VALUE;
+			    	env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), (jlong)INVALID_HANDLE_VALUE);
+			    	env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
+			    	break;
+			}
+		}
 	}
 
 	// Return number of bytes written if successful
-	free(writeBuffer);
+	CloseHandle(overlappedStruct.hEvent);
 	return (result == TRUE) ? numBytesWritten : -1;
 }
 

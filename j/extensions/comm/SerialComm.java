@@ -133,14 +133,16 @@ public class SerialComm
 	static final public int TWO_STOP_BITS = 3;
 	
 	// Flow Control constants
-	static final public int FLOW_CONTROL_CTS_ENABLED = 0x00000001;
-	static final public int FLOW_CONTROL_DSR_ENABLED = 0x00000010;
-	static final public int FLOW_CONTROL_DTR_ENABLED = 0x00000100;
-	static final public int FLOW_CONTROL_RTS_ENABLED = 0x00001000;
-	static final public int FLOW_CONTROL_XONXOFF_ENABLED = 0x00010000;
+	static final public int FLOW_CONTROL_DISABLED = 0x00000000;
+	static final public int FLOW_CONTROL_RTS_ENABLED = 0x00000001;
+	static final public int FLOW_CONTROL_CTS_ENABLED = 0x00000010;
+	static final public int FLOW_CONTROL_DSR_ENABLED = 0x00000100;
+	static final public int FLOW_CONTROL_DTR_ENABLED = 0x00001000;
+	static final public int FLOW_CONTROL_XONXOFF_IN_ENABLED = 0x00010000;
+	static final public int FLOW_CONTROL_XONXOFF_OUT_ENABLED = 0x00100000;
 	
 	// Serial Port Parameters
-	private volatile int baudRate = 9600, byteSize = 8, stopBits = ONE_STOP_BIT, parity = NO_PARITY;
+	private volatile int baudRate = 9600, dataBits = 8, stopBits = ONE_STOP_BIT, parity = NO_PARITY;
 	private volatile int readTimeout = 0, writeTimeout = 0, flowControl = 0;
 	private volatile SerialCommInputStream inputStream = null;
 	private volatile SerialCommOutputStream outputStream = null;
@@ -237,7 +239,7 @@ public class SerialComm
 	 * <p>
 	 * Allows the user to set all port parameters with a single function call.
 	 * <p>
-	 * The baud rate can be any arbitrary value specified by the user.  The default value is 9600 baud.  The byte size
+	 * The baud rate can be any arbitrary value specified by the user.  The default value is 9600 baud.  The data bits parameter
 	 * specifies how many data bits to use per word.  The default is 8, but any values from 5 to 8 are acceptable.
 	 * <p>
 	 * The default number of stop bits is 1, but 2 bits can also be used or even 1.5 on Windows machines.  Please use the built-in
@@ -247,7 +249,7 @@ public class SerialComm
 	 * Acceptable values are {@link #NO_PARITY}, {@link #EVEN_PARITY}, {@link #ODD_PARITY}, {@link #MARK_PARITY}, and {@link #SPACE_PARITY}.
 	 * 
 	 * @param newBaudRate The desired baud rate for this serial port.
-	 * @param newByteSize The number of data bits to use per word.
+	 * @param newDataBits The number of data bits to use per word.
 	 * @param newStopBits The number of stop bits to use.
 	 * @param newParity The type of parity error-checking desired.
 	 * @see #ONE_STOP_BIT
@@ -259,10 +261,10 @@ public class SerialComm
 	 * @see #MARK_PARITY
 	 * @see #SPACE_PARITY
 	 */
-	public final void setComPortParameters(int newBaudRate, int newByteSize, int newStopBits, int newParity)
+	public final void setComPortParameters(int newBaudRate, int newDataBits, int newStopBits, int newParity)
 	{
 		baudRate = newBaudRate;
-		byteSize = newByteSize;
+		dataBits = newDataBits;
 		stopBits = newStopBits;
 		parity = newParity;
 		configPort();
@@ -302,9 +304,9 @@ public class SerialComm
 	 * <p>
 	 * The default number of data bits per word is 8.
 	 * 
-	 * @param newByteSize The desired number of data bits per word.
+	 * @param newDataBits The desired number of data bits per word.
 	 */
-	public final void setByteSize(int newByteSize) { byteSize = newByteSize; configPort(); }
+	public final void setNumDataBits(int newDataBits) { dataBits = newDataBits; configPort(); }
 	
 	/**
 	 * Sets the desired number of stop bits per word.
@@ -392,7 +394,7 @@ public class SerialComm
 	 * 
 	 * @return The current number of data bits per word.
 	 */
-	public final int getByteSize() { return byteSize; }
+	public final int getNumDataBits() { return dataBits; }
 	
 	/**
 	 * Gets the current number of stop bits per word.
@@ -585,7 +587,7 @@ public class SerialComm
 		System.out.println("Ports:");
 		for (int i = 0; i < ports.length; ++i)
 			System.out.println("   " + ports[i].getSystemPortName() + ": " + ports[i].getDescriptivePortName());
-		SerialComm ubxPort = ports[2];
+		SerialComm ubxPort = ports[1];
 		
 		byte[] readBuffer = new byte[2048];
 		System.out.println("Opening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort());
