@@ -581,7 +581,7 @@ public class SerialComm
 		}
 	}
 	
-	/*static public void main(String[] args)
+	static public void main(String[] args)
 	{
 		SerialComm[] ports = SerialComm.getCommPorts();
 		System.out.println("Ports:");
@@ -591,24 +591,24 @@ public class SerialComm
 		
 		byte[] readBuffer = new byte[2048];
 		System.out.println("Opening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort());
-		//ubxPort.setComPortTimeouts(500, 0);
-		InputStream in = ubxPort.getInputStream();
+		ubxPort.setComPortTimeouts(500, 0);
+		//InputStream in = ubxPort.getInputStream();
 		try
 		{
-			//for (int i = 0; i < 3; ++i)
-			//{
-				//System.out.println("\nReading #" + i);
-				//int numRead = ubxPort.readBytes(readBuffer, readBuffer.length);
-				//System.out.println("Read " + numRead + " bytes.");
+			for (int i = 0; i < 3; ++i)
+			{
+				System.out.println("\nReading #" + i);
+				int numRead = ubxPort.readBytes(readBuffer, readBuffer.length);
+				System.out.println("Read " + numRead + " bytes.");
 				
-				for (int j = 0; j < 1000; ++j)
-					System.out.print((char)in.read());
-			//}
-			in.close();
+				//for (int j = 0; j < 1000; ++j)
+					//System.out.print((char)in.read());
+			}
+			//in.close();
 		} catch (Exception e) { e.printStackTrace(); }
 		
 		System.out.println("\n\nClosing " + ubxPort.getDescriptivePortName() + ": " + ubxPort.closePort());
-		System.out.println("Reopening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort() + "\n");
+		/*System.out.println("Reopening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort() + "\n");
 		in = ubxPort.getInputStream();
 		try
 		{
@@ -617,6 +617,6 @@ public class SerialComm
 			in.close();
 		} catch (Exception e) { e.printStackTrace(); }
 		
-		System.out.println("\nClosing " + ubxPort.getDescriptivePortName() + ": " + ubxPort.closePort());
-	}*/
+		System.out.println("\nClosing " + ubxPort.getDescriptivePortName() + ": " + ubxPort.closePort());*/
+	}
 }
