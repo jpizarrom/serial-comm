@@ -460,11 +460,11 @@
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.cross.exe.release.518965671.1065930550.2086987057;cdt.managedbuild.config.gnu.cross.exe.release.518965671.1065930550.2086987057.;cdt.managedbuild.tool.gnu.cross.cpp.compiler.1475358483;cdt.managedbuild.tool.gnu.cpp.compiler.input.196720185">
 			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.cross.exe.release.518965671.1047193314;cdt.managedbuild.config.gnu.cross.exe.release.518965671.1047193314.;cdt.managedbuild.tool.gnu.cross.c.compiler.806648238;cdt.managedbuild.tool.gnu.c.compiler.input.1745017190">
-			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
-		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.cross.exe.release.518965671.1047193314;cdt.managedbuild.config.gnu.cross.exe.release.518965671.1047193314.;cdt.managedbuild.tool.gnu.cross.cpp.compiler.2025620884;cdt.managedbuild.tool.gnu.cpp.compiler.input.1422740765">
 			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.cross.exe.release.518965671.1047193314;cdt.managedbuild.config.gnu.cross.exe.release.518965671.1047193314.;cdt.managedbuild.tool.gnu.cross.c.compiler.806648238;cdt.managedbuild.tool.gnu.c.compiler.input.1745017190">
+			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.cross.exe.release.518965671.1065930550;cdt.managedbuild.config.gnu.cross.exe.release.518965671.1065930550.;cdt.managedbuild.tool.gnu.cross.cpp.compiler.975400043;cdt.managedbuild.tool.gnu.cpp.compiler.input.887189743">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP"/>

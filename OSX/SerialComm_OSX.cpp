@@ -151,7 +151,8 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configFlowControl(J
 	options.c_lflag = 0;
 
 	// Apply changes
-	return SetCommState(serialPortHandle, &dcbSerialParams);
+	tcsetattr(portFD, TCSAFLUSH, &options);
+	return JNI_TRUE;
 }
 
 JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configTimeouts(JNIEnv *env, jobject obj)
