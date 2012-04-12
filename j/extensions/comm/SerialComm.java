@@ -492,11 +492,16 @@ public class SerialComm
 		@Override
 		public final int read() throws IOException
 		{
-			if (!isOpened)
-				throw new IOException("This port appears to have been shutdown or disconnected.");
-			
 			byte[] buffer = new byte[1];
-			return (readBytes(buffer, 1l) > 0) ? ((int)buffer[0] & 0x000000FF) : -1;
+			int bytesRead;
+			
+			while (isOpened)
+			{
+				bytesRead = readBytes(buffer, 1l);
+				if (bytesRead > 0)
+					return ((int)buffer[0] & 0x000000FF);
+			}
+			throw new IOException("This port appears to have been shutdown or disconnected.");
 		}
 		
 		@Override
@@ -583,14 +588,14 @@ public class SerialComm
 		
 		byte[] readBuffer = new byte[2048];
 		System.out.println("Opening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort());
-		//ubxPort.setComPortTimeouts(1000, 0);
+		ubxPort.setComPortTimeouts(10, 0);
 		InputStream in = ubxPort.getInputStream();
 		try
 		{
 			for (int i = 0; i < 3; ++i)
 			{
-				System.out.println("\nAvailable: " + ubxPort.bytesAvailable());
 				System.out.println("\nReading #" + i);
+				System.out.println("Available: " + ubxPort.bytesAvailable());
 				int numRead = ubxPort.readBytes(readBuffer, readBuffer.length);
 				System.out.println("Read " + numRead + " bytes.");
 				
