@@ -179,7 +179,7 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_closePort(JNIEnv *e
 	return JNI_TRUE;
 }
 
-JNIEXPORT jint JNICALL Java_j_extensions_comm_SerialComm_available(JNIEnv *env, jobject obj)
+JNIEXPORT jint JNICALL Java_j_extensions_comm_SerialComm_bytesAvailable(JNIEnv *env, jobject obj)
 {
 	int serialPortFD = (int)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
 	int numBytesAvailable;
