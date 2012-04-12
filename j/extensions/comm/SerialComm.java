@@ -1,6 +1,7 @@
 package j.extensions.comm;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -20,16 +21,17 @@ public class SerialComm
 	static
 	{
 		String OS = System.getProperty("os.name").toLowerCase();
-		String libraryPath = "";
+		String libraryPath = "", fileName = "";
 	
 		// Determine Operating System and architecture
 		if (OS.indexOf("win") >= 0)
 		{
 			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
 					(new File("C:\\Program Files (x86)").exists()))
-				libraryPath = "./Windows/x86_64";
+				libraryPath = "Windows/x86_64";
 			else
-				libraryPath = "./Windows/x86";
+				libraryPath = "Windows/x86";
+			fileName = "SerialComm.dll";
 		}
 		else if (OS.indexOf("mac") >= 0)
 		{
@@ -44,9 +46,10 @@ public class SerialComm
 			
 			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
 					(resultString.indexOf("64") >= 0))
-				libraryPath = "./OSX/x86_64";
+				libraryPath = "OSX/x86_64";
 			else
-				libraryPath = "./OSX/x86";
+				libraryPath = "OSX/x86";
+			fileName = "libSerialComm.jnilib";
 		}
 		else if ((OS.indexOf("nix") >= 0) || (OS.indexOf("nux") >= 0))
 		{
@@ -61,9 +64,10 @@ public class SerialComm
 			
 			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
 					(resultString.indexOf("64") >= 0))
-				libraryPath = "./Linux/x86_64";
+				libraryPath = "Linux/x86_64";
 			else
-				libraryPath = "./Linux/x86";
+				libraryPath = "Linux/x86";
+			fileName = "libSerialComm.so";
 		}
 		else
 		{
@@ -71,10 +75,39 @@ public class SerialComm
 			System.exit(-1);
 		}
 		
-		// Set the library path to include the correct SerialComm library
+		// Delete any native libraries to ensure the correct library is loaded each time
+		File tempNativeLibrary = new File("SerialComm.dll");
+		if (tempNativeLibrary.exists())
+			tempNativeLibrary.delete();
+		tempNativeLibrary = new File("libSerialComm.jnilib");
+		if (tempNativeLibrary.exists())
+			tempNativeLibrary.delete();
+		tempNativeLibrary = new File ("libSerialComm.so");
+		if (tempNativeLibrary.exists())
+			tempNativeLibrary.delete();
+				
+		// Get path of native library and copy file to working directory
+		tempNativeLibrary = new File(fileName);
+		tempNativeLibrary.deleteOnExit();
 		try
 		{
-			System.setProperty("java.library.path", libraryPath);
+			InputStream fileContents = SerialComm.class.getResourceAsStream("/" + libraryPath + "/" + fileName);
+			FileOutputStream destinationFileContents = new FileOutputStream(tempNativeLibrary);
+			byte transferBuffer[] = new byte[4096];
+			int numBytesRead;
+					
+			while ((numBytesRead = fileContents.read(transferBuffer)) > 0)
+				destinationFileContents.write(transferBuffer, 0, numBytesRead);
+					
+			fileContents.close();
+			destinationFileContents.close();
+		}
+		catch (Exception e) { e.printStackTrace(); }
+		
+		// Set the library path to include the working directory (required for some Linux distros)
+		try
+		{
+			System.setProperty("java.library.path", ".");
 			Field fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
 			fieldSysPath.setAccessible(true);
 			fieldSysPath.set(null, null);
