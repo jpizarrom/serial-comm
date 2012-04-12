@@ -1,10 +1,10 @@
 package j.extensions.comm;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 
 /**
  * This class provides native access to serial ports and devices without requiring external libraries or tools.
@@ -20,17 +20,16 @@ public class SerialComm
 	static
 	{
 		String OS = System.getProperty("os.name").toLowerCase();
-		String copyFromPath = "", fileName = "";
+		String libraryPath = "";
 	
 		// Determine Operating System and architecture
 		if (OS.indexOf("win") >= 0)
 		{
 			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
 					(new File("C:\\Program Files (x86)").exists()))
-				copyFromPath = "Windows/x86_64";
+				libraryPath = "./Windows/x86_64";
 			else
-				copyFromPath = "Windows/x86";
-			fileName = "SerialComm.dll";
+				libraryPath = "./Windows/x86";
 		}
 		else if (OS.indexOf("mac") >= 0)
 		{
@@ -45,10 +44,9 @@ public class SerialComm
 			
 			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
 					(resultString.indexOf("64") >= 0))
-				copyFromPath = "OSX/x86_64";
+				libraryPath = "./OSX/x86_64";
 			else
-				copyFromPath = "OSX/x86";
-			fileName = "libSerialComm.jnilib";
+				libraryPath = "./OSX/x86";
 		}
 		else if ((OS.indexOf("nix") >= 0) || (OS.indexOf("nux") >= 0))
 		{
@@ -63,10 +61,9 @@ public class SerialComm
 			
 			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
 					(resultString.indexOf("64") >= 0))
-				copyFromPath = "Linux/x86_64";
+				libraryPath = "./Linux/x86_64";
 			else
-				copyFromPath = "Linux/x86";
-			fileName = "libSerialComm.so";
+				libraryPath = "./Linux/x86";
 		}
 		else
 		{
@@ -74,34 +71,15 @@ public class SerialComm
 			System.exit(-1);
 		}
 		
-		// Delete any native libraries to ensure the correct library is loaded each time
-		File tempNativeLibrary = new File("SerialComm.dll");
-		if (tempNativeLibrary.exists())
-			tempNativeLibrary.delete();
-		tempNativeLibrary = new File("libSerialComm.jnilib");
-		if (tempNativeLibrary.exists())
-			tempNativeLibrary.delete();
-		tempNativeLibrary = new File ("libSerialComm.so");
-		if (tempNativeLibrary.exists())
-			tempNativeLibrary.delete();
-		
-		// Get path of native library and copy file to working directory
-		tempNativeLibrary = new File(fileName);
-		tempNativeLibrary.deleteOnExit();
+		// Set the library path to include the correct SerialComm library
 		try
 		{
-			InputStream fileContents = SerialComm.class.getResourceAsStream("/" + copyFromPath + "/" + fileName);
-			FileOutputStream destinationFileContents = new FileOutputStream(tempNativeLibrary);
-			byte transferBuffer[] = new byte[4096];
-			int numBytesRead;
-			
-			while ((numBytesRead = fileContents.read(transferBuffer)) > 0)
-				destinationFileContents.write(transferBuffer, 0, numBytesRead);
-			
-			fileContents.close();
-			destinationFileContents.close();
+			System.setProperty("java.library.path", libraryPath);
+			Field fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
+			fieldSysPath.setAccessible(true);
+			fieldSysPath.set(null, null);
 		}
-		catch (Exception e) { e.printStackTrace(); }
+		catch (Exception e) {}
 		
 		// Load native library
 		System.loadLibrary("SerialComm");
@@ -166,6 +144,14 @@ public class SerialComm
 	private final native boolean configPort();							// Changes/sets serial port parameters as defined by this class
 	private final native boolean configFlowControl();					// Changes/sets flow control parameters as defined by this class
 	private final native boolean configTimeouts();						// Changes/sets serial port timeouts as defined by this class
+	
+	/**
+	 * Returns the number of bytes available without blocking if {@link #readBytes} were to be called immediately
+	 * after this method returns.
+	 * 
+	 * @return The number of bytes currently available to be read.
+	 */
+	public final native int bytesAvailable();
 	
 	/**
 	 * Reads up to <i>bytesToRead</i> raw data bytes from the serial port and stores them in the buffer.
@@ -328,25 +314,28 @@ public class SerialComm
 	 * <p>
 	 * By default, no flow control is enabled.  Built-in flow control constants should be used
 	 * in this method ({@link #FLOW_CONTROL_RTS_ENABLED}, {@link #FLOW_CONTROL_CTS_ENABLED}, {@link #FLOW_CONTROL_DTR_ENABLED},
-	 * {@link #FLOW_CONTROL_DSR_ENABLED}, {@link #FLOW_CONTROL_XONXOFF_ENABLED}), and can be OR'ed together.
+	 * {@link #FLOW_CONTROL_DSR_ENABLED}, {@link #FLOW_CONTROL_XONXOFF_IN_ENABLED}, {@link #FLOW_CONTROL_XONXOFF_OUT_ENABLED}), and can be OR'ed together.
 	 * <p>
 	 * Valid flow control configurations are:
 	 * <p>
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;None: {@link #FLOW_CONTROL_DISABLED}<br />
 	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CTS: {@link #FLOW_CONTROL_CTS_ENABLED}<br />
 	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RTS/CTS: {@link #FLOW_CONTROL_RTS_ENABLED} | {@link #FLOW_CONTROL_CTS_ENABLED}<br />
 	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DSR: {@link #FLOW_CONTROL_DSR_ENABLED}<br />
 	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DTR/DSR: {@link #FLOW_CONTROL_DTR_ENABLED} | {@link #FLOW_CONTROL_DSR_ENABLED}<br />
-	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;XOn/XOff: {@link #FLOW_CONTROL_XONXOFF_ENABLED}
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;XOn/XOff: {@link #FLOW_CONTROL_XONXOFF_IN_ENABLED} | {@link #FLOW_CONTROL_XONXOFF_OUT_ENABLED}
 	 * <p>
 	 * Note that only one valid flow control configuration can be used at any time.  For example, attempting to use both XOn/XOff
 	 * <b>and</b> RTS/CTS will most likely result in an unusable serial port.
 	 * 
 	 * @param newFlowControlSettings The desired type of flow control to enable for this serial port.
+	 * @see #FLOW_CONTROL_DISABLED
 	 * @see #FLOW_CONTROL_RTS_ENABLED
 	 * @see #FLOW_CONTROL_CTS_ENABLED
 	 * @see #FLOW_CONTROL_DTR_ENABLED
 	 * @see #FLOW_CONTROL_DSR_ENABLED
-	 * @see #FLOW_CONTROL_XONXOFF_ENABLED
+	 * @see #FLOW_CONTROL_XONXOFF_IN_ENABLED
+	 * @see #FLOW_CONTROL_XONXOFF_OUT_ENABLED
 	 */
 	public final void setFlowControl(int newFlowControlSettings) { flowControl = newFlowControlSettings; configFlowControl(); }
 	
@@ -456,18 +445,21 @@ public class SerialComm
 	 * The integer result should be masked with the built-in flow control constants to test if the desired setting is enabled.
 	 * Valid flow control configurations are:
 	 * <p>
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;None: {@link #FLOW_CONTROL_DISABLED}<br />
 	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CTS: {@link #FLOW_CONTROL_CTS_ENABLED}<br />
 	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RTS/CTS: {@link #FLOW_CONTROL_RTS_ENABLED} | {@link #FLOW_CONTROL_CTS_ENABLED}<br />
 	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DSR: {@link #FLOW_CONTROL_DSR_ENABLED}<br />
 	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DTR/DSR: {@link #FLOW_CONTROL_DTR_ENABLED} | {@link #FLOW_CONTROL_DSR_ENABLED}<br />
-	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;XOn/XOff: {@link #FLOW_CONTROL_XONXOFF_ENABLED}
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;XOn/XOff: {@link #FLOW_CONTROL_XONXOFF_IN_ENABLED} | {@link #FLOW_CONTROL_XONXOFF_OUT_ENABLED}
 	 * 
 	 * @return The flow control settings enabled on this serial port.
+	 * @see #FLOW_CONTROL_DISABLED
 	 * @see #FLOW_CONTROL_RTS_ENABLED
 	 * @see #FLOW_CONTROL_CTS_ENABLED
 	 * @see #FLOW_CONTROL_DTR_ENABLED
 	 * @see #FLOW_CONTROL_DSR_ENABLED
-	 * @see #FLOW_CONTROL_XONXOFF_ENABLED
+	 * @see #FLOW_CONTROL_XONXOFF_IN_ENABLED
+	 * @see #FLOW_CONTROL_XONXOFF_OUT_ENABLED
 	 */
 	public final int getFlowControlSettings() { return flowControl; }
 	
@@ -494,7 +486,7 @@ public class SerialComm
 			if (!isOpened)
 				throw new IOException("This port appears to have been shutdown or disconnected.");
 			
-			return 1;
+			return bytesAvailable();
 		}
 		
 		@Override
@@ -591,12 +583,13 @@ public class SerialComm
 		
 		byte[] readBuffer = new byte[2048];
 		System.out.println("Opening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort());
-		ubxPort.setComPortTimeouts(500, 0);
-		//InputStream in = ubxPort.getInputStream();
+		//ubxPort.setComPortTimeouts(1000, 0);
+		InputStream in = ubxPort.getInputStream();
 		try
 		{
 			for (int i = 0; i < 3; ++i)
 			{
+				System.out.println("\nAvailable: " + ubxPort.bytesAvailable());
 				System.out.println("\nReading #" + i);
 				int numRead = ubxPort.readBytes(readBuffer, readBuffer.length);
 				System.out.println("Read " + numRead + " bytes.");
@@ -604,11 +597,11 @@ public class SerialComm
 				//for (int j = 0; j < 1000; ++j)
 					//System.out.print((char)in.read());
 			}
-			//in.close();
+			in.close();
 		} catch (Exception e) { e.printStackTrace(); }
 		
 		System.out.println("\n\nClosing " + ubxPort.getDescriptivePortName() + ": " + ubxPort.closePort());
-		/*System.out.println("Reopening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort() + "\n");
+		System.out.println("Reopening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort() + "\n");
 		in = ubxPort.getInputStream();
 		try
 		{
@@ -617,6 +610,6 @@ public class SerialComm
 			in.close();
 		} catch (Exception e) { e.printStackTrace(); }
 		
-		System.out.println("\nClosing " + ubxPort.getDescriptivePortName() + ": " + ubxPort.closePort());*/
-	//}
+		System.out.println("\nClosing " + ubxPort.getDescriptivePortName() + ": " + ubxPort.closePort());
+	}*/
 }

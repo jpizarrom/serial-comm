@@ -15,6 +15,7 @@
 #include <linux/serial.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <cerrno>
 #include <unistd.h>
 #include <termios.h>
 #include "../j_extensions_comm_SerialComm.h"
@@ -24,8 +25,8 @@ JNIEXPORT jobjectArray JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JN
 	DIR *serialPortIterator;
 	struct dirent *serialPortEntry;
 	int serialPort;
-	int numValues = 0, numChars, index = 0;
-	char portString[1024], comPort[1024];
+	int numValues = -2, numChars, index = 0;
+	char portString[1024], comPort[1024], pathBase[21] = {"/dev/serial/by-path/"};
 
 	// Get relevant SerialComm methods and IDs
 	jmethodID serialCommConstructor = env->GetMethodID(serialCommClass, "<init>", "()V");
@@ -33,7 +34,7 @@ JNIEXPORT jobjectArray JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JN
 	jfieldID comPortID = env->GetFieldID(serialCommClass, "comPort", "Ljava/lang/String;");
 
 	// Enumerate serial ports on machine
-	if ((serialPortIterator = opendir("/dev/serial/by-path/")) == NULL)
+	if ((serialPortIterator = opendir(pathBase)) == NULL)
 		return NULL;
 	while (readdir(serialPortIterator) != NULL) ++numValues;
 	rewinddir(serialPortIterator);
@@ -41,12 +42,16 @@ JNIEXPORT jobjectArray JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JN
 	while ((serialPortEntry = readdir(serialPortIterator)) != NULL)
 	{
 		// Get serial COM value
-		if ((numChars = readlink(serialPortEntry->d_name, comPort, sizeof(comPort))) == -1)
+		strcpy(portString, pathBase);
+		strcpy(portString+20, serialPortEntry->d_name);
+		if ((numChars = readlink(portString, comPort, sizeof(comPort))) == -1)
 			continue;
 		comPort[numChars] = '\0';
 
 		// Get port name
 		strcpy(portString, strrchr(comPort, '/') + 1);
+		strcpy(comPort, "/dev/");
+		strcpy(comPort+5, portString);
 
 		// Create new SerialComm object containing the enumerated values
 		jobject serialCommObject = env->NewObject(serialCommClass, serialCommConstructor);
@@ -172,6 +177,16 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_closePort(JNIEnv *e
 	env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
 
 	return JNI_TRUE;
+}
+
+JNIEXPORT jint JNICALL Java_j_extensions_comm_SerialComm_available(JNIEnv *env, jobject obj)
+{
+	int serialPortFD = (int)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
+	int numBytesAvailable;
+
+    ioctl(serialPortFD, FIONREAD, &numBytesAvailable);
+	
+	return numBytesAvailable;
 }
 
 JNIEXPORT jint JNICALL Java_j_extensions_comm_SerialComm_readBytes(JNIEnv *env, jobject obj, jbyteArray buffer, jlong bytesToRead)

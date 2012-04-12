@@ -190,6 +190,19 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_closePort(JNIEnv *e
 	return (retVal == 0) ? JNI_FALSE : JNI_TRUE;
 }
 
+JNIEXPORT jint JNICALL Java_j_extensions_comm_SerialComm_bytesAvailable(JNIEnv *env, jobject obj)
+{
+	HANDLE serialPortHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
+	COMSTAT commInfo;
+	DWORD numBytesAvailable;
+
+	if (!ClearCommError(serialPortHandle, NULL, &commInfo))
+		return -1;
+	numBytesAvailable = commInfo.cbInQue;
+	
+	return (jint)numBytesAvailable;
+}
+
 JNIEXPORT jint JNICALL Java_j_extensions_comm_SerialComm_readBytes(JNIEnv *env, jobject obj, jbyteArray buffer, jlong bytesToRead)
 {
 	HANDLE serialPortHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"));
