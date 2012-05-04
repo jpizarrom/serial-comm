@@ -5,7 +5,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
 
 /**
  * This class provides native access to serial ports and devices without requiring external libraries or tools.
@@ -602,7 +601,7 @@ public class SerialComm
 		}
 	}
 	
-	static public void main(String[] args)
+	/*static public void main(String[] args)
 	{
 		SerialComm[] ports = SerialComm.getCommPorts();
 		System.out.println("Ports:");
@@ -640,5 +639,5 @@ public class SerialComm
 		} catch (Exception e) { e.printStackTrace(); }
 		
 		System.out.println("\nClosing " + ubxPort.getDescriptivePortName() + ": " + ubxPort.closePort());
-	}
+	}*/
 }
