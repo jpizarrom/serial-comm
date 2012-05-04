@@ -21,13 +21,13 @@ public class SerialComm
 	static
 	{
 		String OS = System.getProperty("os.name").toLowerCase();
+		String tempFileDirectory = System.getProperty("java.io.tmpdir");
 		String libraryPath = "", fileName = "";
 	
 		// Determine Operating System and architecture
 		if (OS.indexOf("win") >= 0)
 		{
-			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
-					(new File("C:\\Program Files (x86)").exists()))
+			if ((System.getProperty("os.arch").indexOf("64") >= 0) || (new File("C:\\Program Files (x86)").exists()))
 				libraryPath = "Windows/x86_64";
 			else
 				libraryPath = "Windows/x86";
@@ -44,8 +44,7 @@ public class SerialComm
 				inStream.close();
 			} catch (Exception e) {}
 			
-			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
-					(resultString.indexOf("64") >= 0))
+			if ((System.getProperty("os.arch").indexOf("64") >= 0) || (resultString.indexOf("64") >= 0))
 				libraryPath = "OSX/x86_64";
 			else
 				libraryPath = "OSX/x86";
@@ -62,8 +61,7 @@ public class SerialComm
 				inStream.close();
 			} catch (Exception e) {}
 			
-			if ((System.getProperty("os.arch").indexOf("64") >= 0) ||
-					(resultString.indexOf("64") >= 0))
+			if ((System.getProperty("os.arch").indexOf("64") >= 0) || (resultString.indexOf("64") >= 0))
 				libraryPath = "Linux/x86_64";
 			else
 				libraryPath = "Linux/x86";
@@ -75,19 +73,8 @@ public class SerialComm
 			System.exit(-1);
 		}
 		
-		// Delete any native libraries to ensure the correct library is loaded each time
-		File tempNativeLibrary = new File("SerialComm.dll");
-		if (tempNativeLibrary.exists())
-			tempNativeLibrary.delete();
-		tempNativeLibrary = new File("libSerialComm.jnilib");
-		if (tempNativeLibrary.exists())
-			tempNativeLibrary.delete();
-		tempNativeLibrary = new File ("libSerialComm.so");
-		if (tempNativeLibrary.exists())
-			tempNativeLibrary.delete();
-				
 		// Get path of native library and copy file to working directory
-		tempNativeLibrary = new File(fileName);
+		File tempNativeLibrary = new File(tempFileDirectory + fileName);
 		tempNativeLibrary.deleteOnExit();
 		try
 		{
@@ -104,18 +91,8 @@ public class SerialComm
 		}
 		catch (Exception e) { e.printStackTrace(); }
 		
-		// Set the library path to include the working directory (required for some Linux distros)
-		try
-		{
-			System.setProperty("java.library.path", ".");
-			Field fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
-			fieldSysPath.setAccessible(true);
-			fieldSysPath.set(null, null);
-		}
-		catch (Exception e) {}
-		
 		// Load native library
-		System.loadLibrary("SerialComm");
+		System.load(tempFileDirectory + fileName);
 	}
 	
 	/**
@@ -152,9 +129,16 @@ public class SerialComm
 	static final public int FLOW_CONTROL_XONXOFF_IN_ENABLED = 0x00010000;
 	static final public int FLOW_CONTROL_XONXOFF_OUT_ENABLED = 0x00100000;
 	
+	// Timeout Modes
+	static final public int TIMEOUT_NONBLOCKING = 0x00000000;
+	static final public int TIMEOUT_READ_SEMI_BLOCKING = 0x00000001;
+	static final public int TIMEOUT_WRITE_SEMI_BLOCKING = 0x00000010;
+	static final public int TIMEOUT_READ_BLOCKING = 0x00000100;
+	static final public int TIMEOUT_WRITE_BLOCKING = 0x00001000;
+	
 	// Serial Port Parameters
 	private volatile int baudRate = 9600, dataBits = 8, stopBits = ONE_STOP_BIT, parity = NO_PARITY;
-	private volatile int readTimeout = 0, writeTimeout = 0, flowControl = 0;
+	private volatile int timeoutMode = TIMEOUT_NONBLOCKING, readTimeout = 0, writeTimeout = 0, flowControl = 0;
 	private volatile SerialCommInputStream inputStream = null;
 	private volatile SerialCommOutputStream outputStream = null;
 	private volatile String portString, comPort;
@@ -292,18 +276,39 @@ public class SerialComm
 	/**
 	 * Sets the serial port read and write timeout parameters.
 	 * <p>
-	 * A value of 0 indicates that a {@link #readBytes(byte[],long)} or {@link #writeBytes(byte[],long)} call
-	 * should block forever until it has successfully read or written the indicated number of bytes to the serial port.
+	 * The built-in timeout mode constants should be used ({@link #TIMEOUT_NONBLOCKING}, {@link #TIMEOUT_READ_SEMI_BLOCKING}, 
+	 * {@link #TIMEOUT_WRITE_SEMI_BLOCKING}, {@link #TIMEOUT_READ_BLOCKING}, {@link #TIMEOUT_WRITE_BLOCKING}) to specify how
+	 * timeouts are to be handled.
 	 * <p>
-	 * Any value other than 0 indicates that a {@link #readBytes(byte[],long)} or {@link #writeBytes(byte[],long)} call
-	 * will return after <i>newReadTimeout</i> or <i>newWriteTimeout</i> milliseconds of inactivity, regardless of the
-	 * availability of more data or the number of bytes successfully written or read.
+	 * Valid modes are:
+	 * <p>
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Non-blocking: {@link #TIMEOUT_NONBLOCKING}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Read Semi-blocking: {@link #TIMEOUT_READ_SEMI_BLOCKING} | {@link #TIMEOUT_NONBLOCKING}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Read/Write Semi-blocking: {@link #TIMEOUT_READ_SEMI_BLOCKING} | {@link #TIMEOUT_WRITE_SEMI_BLOCKING}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Read Semi-Blocking/Write Full-blocking: {@link #TIMEOUT_READ_SEMI_BLOCKING} | {@link #TIMEOUT_WRITE_BLOCKING}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Read Full-blocking: {@link #TIMEOUT_READ_BLOCKING} | {@link #TIMEOUT_NONBLOCKING}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Read Full-blocking/Write Semi-blocking: {@link #TIMEOUT_READ_BLOCKING} | {@link #TIMEOUT_WRITE_SEMI_BLOCKING}<br />
+	 * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Read/Write Full-blocking: {@link #TIMEOUT_READ_BLOCKING} | {@link #TIMEOUT_WRITE_BLOCKING}<br />
+	 * <p>
+	 * The {@link #TIMEOUT_NONBLOCKING} mode specifies that the corresponding {@link #readBytes(byte[],long)} or {@link #writeBytes(byte[],long)} call
+	 * will return immediately with any available data.
+	 * <p>
+	 * The {@link #TIMEOUT_READ_SEMI_BLOCKING} or {@link #TIMEOUT_WRITE_SEMI_BLOCKING} modes specify that the corresponding calls will block until either 
+	 * <i>newReadTimeout</i> or <i>newWriteTimeout</i> milliseconds of inactivity have elapsed or at least 1 byte of data can be written or read.
+	 * <p>
+	 * The {@link #TIMEOUT_READ_BLOCKING} or {@link #TIMEOUT_WRITE_BLOCKING} modes specify that the corresponding call will block until either
+	 * <i>newReadTimeout</i> or <i>newWriteTimeout</i> milliseconds of inactivity have elapsed or the total number of requested bytes can be written or 
+	 * returned.
+	 * <p>
+	 * A value of 0 for either <i>newReadTimeout</i> or <i>newWriteTimeout</i> indicates that a {@link #readBytes(byte[],long)} or 
+	 * {@link #writeBytes(byte[],long)} call should block forever until it can return successfully (based upon the current timeout mode specified).
 	 * 
 	 * @param newReadTimeout The number of milliseconds of inactivity to tolerate before returning from a {@link #readBytes(byte[],long)} call.
 	 * @param newWriteTimeout The number of milliseconds of inactivity to tolerate before returning from a {@link #writeBytes(byte[],long)} call.
 	 */
-	public final void setComPortTimeouts(int newReadTimeout, int newWriteTimeout)
+	public final void setComPortTimeouts(int newTimeoutMode, int newReadTimeout, int newWriteTimeout)
 	{
+		timeoutMode = newTimeoutMode;
 		readTimeout = newReadTimeout;
 		writeTimeout = newWriteTimeout;
 		configTimeouts();
@@ -496,20 +501,6 @@ public class SerialComm
 	 */
 	public final int getFlowControlSettings() { return flowControl; }
 	
-	private final void fixAndSetComPort(String comPortName)
-	{
-		comPort = "\\\\.\\";
-		if (comPortName.charAt(0) != '\\')
-			comPort += comPortName;
-		else
-			comPort = comPortName;
-	}
-	
-	private final void fixAndSetPortString(String portStringName)
-	{
-		portString = portStringName.substring(portStringName.lastIndexOf('\\') + 1);
-	}
-	
 	// InputStream interface class
 	private final class SerialCommInputStream extends InputStream
 	{
@@ -611,7 +602,7 @@ public class SerialComm
 		}
 	}
 	
-	/*static public void main(String[] args)
+	static public void main(String[] args)
 	{
 		SerialComm[] ports = SerialComm.getCommPorts();
 		System.out.println("Ports:");
@@ -621,7 +612,7 @@ public class SerialComm
 		
 		byte[] readBuffer = new byte[2048];
 		System.out.println("Opening " + ubxPort.getDescriptivePortName() + ": " + ubxPort.openPort());
-		ubxPort.setComPortTimeouts(10, 0);
+		ubxPort.setComPortTimeouts(TIMEOUT_READ_BLOCKING, 1000, 0);
 		InputStream in = ubxPort.getInputStream();
 		try
 		{
@@ -649,5 +640,5 @@ public class SerialComm
 		} catch (Exception e) { e.printStackTrace(); }
 		
 		System.out.println("\nClosing " + ubxPort.getDescriptivePortName() + ": " + ubxPort.closePort());
-	}*/
+	}
 }

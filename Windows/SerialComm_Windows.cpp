@@ -23,8 +23,6 @@ JNIEXPORT jobjectArray JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JN
 
 	// Get relevant SerialComm methods
 	jmethodID serialCommConstructor = env->GetMethodID(serialCommClass, "<init>", "()V");
-	jmethodID serialCommSetPortStringMethod = env->GetMethodID(serialCommClass, "fixAndSetPortString", "(Ljava/lang/String;)V");
-	jmethodID serialCommSetComPortMethod = env->GetMethodID(serialCommClass, "fixAndSetComPort", "(Ljava/lang/String;)V");
 
 	// Enumerate serial ports on machine
 	RegOpenKeyEx(HKEY_LOCAL_MACHINE, "HARDWARE\\DEVICEMAP\\SERIALCOMM", 0, KEY_QUERY_VALUE, &keyHandle);
@@ -38,8 +36,17 @@ JNIEXPORT jobjectArray JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JN
 
 		// Create new SerialComm object containing the enumerated values
 		jobject serialCommObject = env->NewObject(serialCommClass, serialCommConstructor);
-		env->CallVoidMethod(serialCommObject, serialCommSetPortStringMethod, env->NewStringUTF(valueName));
-		env->CallVoidMethod(serialCommObject, serialCommSetComPortMethod, env->NewStringUTF((char*)comPort));
+
+		// Set port name and description
+		if (comPort[0] != '\\')
+		{
+			char comPrefix[1024] = "\\\\.\\";
+			strcat(comPrefix, (char*)comPort);
+			env->SetObjectField(serialCommObject, env->GetFieldID(serialCommClass, "comPort", "Ljava/lang/String;"), env->NewStringUTF(comPrefix));
+		}
+		else
+			env->SetObjectField(serialCommObject, env->GetFieldID(serialCommClass, "comPort", "Ljava/lang/String;"), env->NewStringUTF((char*)comPort));
+		env->SetObjectField(serialCommObject, env->GetFieldID(serialCommClass, "portString", "Ljava/lang/String;"), env->NewStringUTF(strrchr(valueName, '\\') + 1));
 
 		// Add new SerialComm object to array
 		env->SetObjectArrayElement(arrayObject, i, serialCommObject);
@@ -161,15 +168,52 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configTimeouts(JNIE
 	COMMTIMEOUTS timeouts = {0};
 	jclass serialCommClass = env->GetObjectClass(obj);
 	HANDLE serialHandle = (HANDLE)env->GetLongField(obj, env->GetFieldID(serialCommClass, "portHandle", "J"));
+	int timeoutMode = env->GetIntField(obj, env->GetFieldID(serialCommClass, "timeoutMode", "I"));
 	DWORD readTimeout = (DWORD)env->GetIntField(obj, env->GetFieldID(serialCommClass, "readTimeout", "I"));
 	DWORD writeTimeout = (DWORD)env->GetIntField(obj, env->GetFieldID(serialCommClass, "writeTimeout", "I"));
 
 	// Set updated port timeouts
-	timeouts.ReadIntervalTimeout = 0;
-	timeouts.ReadTotalTimeoutConstant = readTimeout;
 	timeouts.ReadTotalTimeoutMultiplier = 0;
-	timeouts.WriteTotalTimeoutConstant = writeTimeout;
 	timeouts.WriteTotalTimeoutMultiplier = 0;
+	switch (timeoutMode)
+	{
+		case j_extensions_comm_SerialComm_TIMEOUT_READ_SEMI_BLOCKING:		// Read Semi-blocking
+			timeouts.ReadIntervalTimeout = 10;
+			timeouts.ReadTotalTimeoutConstant = readTimeout;
+			timeouts.WriteTotalTimeoutConstant = 10;
+			break;
+		case (j_extensions_comm_SerialComm_TIMEOUT_READ_SEMI_BLOCKING | j_extensions_comm_SerialComm_TIMEOUT_WRITE_SEMI_BLOCKING):	// Read/Write Semi-blocking
+			timeouts.ReadIntervalTimeout = 10;
+			timeouts.ReadTotalTimeoutConstant = readTimeout;
+			timeouts.WriteTotalTimeoutConstant = writeTimeout;
+			break;
+		case (j_extensions_comm_SerialComm_TIMEOUT_READ_SEMI_BLOCKING | j_extensions_comm_SerialComm_TIMEOUT_WRITE_BLOCKING):		// Read Semi-blocking/Write Blocking
+			timeouts.ReadIntervalTimeout = 10;
+			timeouts.ReadTotalTimeoutConstant = readTimeout;
+			timeouts.WriteTotalTimeoutConstant = writeTimeout;
+			break;
+		case j_extensions_comm_SerialComm_TIMEOUT_READ_BLOCKING:		// Read Blocking
+			timeouts.ReadIntervalTimeout = 0;
+			timeouts.ReadTotalTimeoutConstant = readTimeout;
+			timeouts.WriteTotalTimeoutConstant = 10;
+			break;
+		case (j_extensions_comm_SerialComm_TIMEOUT_READ_BLOCKING | j_extensions_comm_SerialComm_TIMEOUT_WRITE_SEMI_BLOCKING):	// Read Blocking/Write Semi-blocking
+			timeouts.ReadIntervalTimeout = 0;
+			timeouts.ReadTotalTimeoutConstant = readTimeout;
+			timeouts.WriteTotalTimeoutConstant = writeTimeout;
+			break;
+		case (j_extensions_comm_SerialComm_TIMEOUT_READ_BLOCKING | j_extensions_comm_SerialComm_TIMEOUT_WRITE_BLOCKING):		// Read/Write Blocking
+			timeouts.ReadIntervalTimeout = 0;
+			timeouts.ReadTotalTimeoutConstant = readTimeout;
+			timeouts.WriteTotalTimeoutConstant = writeTimeout;
+			break;
+		case j_extensions_comm_SerialComm_TIMEOUT_NONBLOCKING:		// Non-blocking
+		default:
+			timeouts.ReadIntervalTimeout = MAXDWORD;
+			timeouts.ReadTotalTimeoutConstant = 0;
+			timeouts.WriteTotalTimeoutConstant = 10;
+			break;
+	}
 
 	// Apply changes
 	return SetCommTimeouts(serialHandle, &timeouts);
