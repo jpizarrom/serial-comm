@@ -18,6 +18,7 @@
 #include <cerrno>
 #include <unistd.h>
 #include <termios.h>
+#include <sys/time.h>
 #include "../j_extensions_comm_SerialComm.h"
 
 JNIEXPORT jobjectArray JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JNIEnv *env, jclass serialCommClass)
@@ -146,6 +147,7 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configTimeouts(JNIE
 	// Get port timeouts from Java class
 	jclass serialCommClass = env->GetObjectClass(obj);
 	int serialFD = (int)env->GetLongField(obj, env->GetFieldID(serialCommClass, "portHandle", "J"));
+	int timeoutMode = env->GetIntField(obj, env->GetFieldID(serialCommClass, "timeoutMode", "I"));
 	int readTimeout = env->GetIntField(obj, env->GetFieldID(serialCommClass, "readTimeout", "I"));
 
 	// Retrieve existing port configuration
@@ -153,15 +155,21 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configTimeouts(JNIE
 	tcgetattr(serialFD, &options);
 
 	// Set updated port timeouts
-	if (readTimeout == 0)
+	switch (timeoutMode)
 	{
-		options.c_cc[VMIN] = 1;
-		options.c_cc[VTIME] = 0;
-	}
-	else
-	{
-		options.c_cc[VMIN] = 0;
-		options.c_cc[VTIME] = readTimeout / 100;
+		case j_extensions_comm_SerialComm_TIMEOUT_READ_SEMI_BLOCKING:	// Read Semi-blocking
+			options.c_cc[VMIN] = 0;
+			options.c_cc[VTIME] = readTimeout / 100;
+			break;
+		case j_extensions_comm_SerialComm_TIMEOUT_READ_BLOCKING:		// Read Blocking
+			options.c_cc[VMIN] = 0;
+			options.c_cc[VTIME] = 1;
+			break;
+		case j_extensions_comm_SerialComm_TIMEOUT_NONBLOCKING:			// Non-blocking
+		default:
+			options.c_cc[VMIN] = 0;
+			options.c_cc[VTIME] = 0;
+			break;
 	}
 
 	// Apply changes
@@ -194,12 +202,13 @@ JNIEXPORT jint JNICALL Java_j_extensions_comm_SerialComm_readBytes(JNIEnv *env, 
 	// Get port handle and read timeout from Java class
 	jbyte *readBuffer = env->GetByteArrayElements(buffer, 0);
 	jclass serialCommClass = env->GetObjectClass(obj);
+	int timeoutMode = env->GetIntField(obj, env->GetFieldID(serialCommClass, "timeoutMode", "I"));
 	int readTimeout = env->GetIntField(obj, env->GetFieldID(serialCommClass, "readTimeout", "I"));
 	int serialPortFD = (int)env->GetLongField(obj, env->GetFieldID(serialCommClass, "portHandle", "J"));
 	int numBytesRead, bytesRemaining = bytesToRead, index = 0;
 
-	// No timeout specified, don't return until we have completely finished the read
-	if (readTimeout == 0)
+	// Infinite blocking mode specified, don't return until we have completely finished the read
+	if ((timeoutMode == j_extensions_comm_SerialComm_TIMEOUT_READ_BLOCKING) && (readTimeout == 0))
 	{
 		// While there are more bytes we are supposed to read
 		while (bytesRemaining > 0)
@@ -223,7 +232,45 @@ JNIEXPORT jint JNICALL Java_j_extensions_comm_SerialComm_readBytes(JNIEnv *env, 
 		env->ReleaseByteArrayElements(buffer, readBuffer, 0);
 		numBytesRead = bytesToRead;
 	}
-	else		// Timeouts specified
+	else if (timeoutMode == j_extensions_comm_SerialComm_TIMEOUT_READ_BLOCKING)		// Blocking mode, but not indefinitely
+	{
+		// Get current system time
+		struct timeval expireTime, currTime;
+		gettimeofday(&expireTime, NULL);
+		expireTime.tv_usec += (readTimeout * 1000);
+		if (expireTime.tv_usec > 1000000)
+		{
+			expireTime.tv_sec += (expireTime.tv_usec * 0.000001);
+			expireTime.tv_usec = (expireTime.tv_usec % 1000000);
+		}
+
+		// While there are more bytes we are supposed to read and the timeout has not elapsed
+		do
+		{
+			if ((numBytesRead = read(serialPortFD, readBuffer+index, bytesRemaining)) == -1)
+			{
+				// Problem reading, close port
+				close(serialPortFD);
+				serialPortFD = -1;
+				env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), -1l);
+				env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_FALSE);
+				break;
+			}
+
+			// Fix index variables
+			index += numBytesRead;
+			bytesRemaining -= numBytesRead;
+
+			// Get current system time
+			gettimeofday(&currTime, NULL);
+		} while ((bytesRemaining > 0) && ((expireTime.tv_sec > currTime.tv_sec) ||
+				((expireTime.tv_sec == currTime.tv_sec) && (expireTime.tv_usec > currTime.tv_usec))));
+
+		// Set return values
+		env->ReleaseByteArrayElements(buffer, readBuffer, 0);
+		numBytesRead = index;
+	}
+	else		// Timeouts or non-blocking specified
 	{
 		// Read from port
 		if ((numBytesRead = read(serialPortFD, readBuffer, bytesToRead)) > -1)
