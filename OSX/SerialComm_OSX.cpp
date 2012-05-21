@@ -324,4 +324,3 @@ JNIEXPORT jint JNICALL Java_j_extensions_comm_SerialComm_writeBytes(JNIEnv *env,
 }
 
 #endif
-

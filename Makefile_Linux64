@@ -1,0 +1,16 @@
+all : libSerialComm.so
+	rm j_extensions_comm_SerialComm_SerialCommInputStream.h
+	rm j_extensions_comm_SerialComm_SerialCommOutputStream.h
+	rm Linux/SerialComm_Linux.o
+	jar cmf MANIFEST.MF SerialComm.jar j/extensions/comm/*.class Linux/x86/* Linux/x86_64/* OSX/x86/* OSX/x86_64/* Windows/x86/* Windows/x86_64/*
+libSerialComm.so : SerialComm_Linux.o
+	cc -m64 -fPIC -shared -o Linux/x86_64/libSerialComm.so Linux/SerialComm_Linux.o
+SerialComm_Linux.o : Linux/SerialComm_Linux.cpp j_extensions_comm_SerialComm.h
+	cc -m64 -c -fPIC Linux/SerialComm_Linux.cpp -o Linux/SerialComm_Linux.o
+j_extensions_comm_SerialComm.h : j/extensions/comm/SerialComm.class
+	javah -jni j.extensions.comm.SerialComm
+clean :
+	rm j_extensions_comm_SerialComm_SerialCommInputStream.h
+	rm j_extensions_comm_SerialComm_SerialCommOutputStream.h
+	rm j_extensions_comm_SerialComm.h
+	rm Linux/SerialComm_Linux.o

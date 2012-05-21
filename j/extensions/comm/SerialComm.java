@@ -64,7 +64,7 @@ public class SerialComm
 				libraryPath = "Linux/x86_64";
 			else
 				libraryPath = "Linux/x86";
-			fileName = "libSerialComm.so";
+			fileName = "/libSerialComm.so";
 		}
 		else
 		{

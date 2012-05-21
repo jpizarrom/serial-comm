@@ -80,7 +80,8 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_openPort(JNIEnv *en
 		env->SetLongField(obj, env->GetFieldID(env->GetObjectClass(obj), "portHandle", "J"), fdSerial);
 
 		// Configure the port parameters and timeouts
-		if (Java_j_extensions_comm_SerialComm_configPort(env, obj) && Java_j_extensions_comm_SerialComm_configTimeouts(env, obj))
+		if (Java_j_extensions_comm_SerialComm_configPort(env, obj) && Java_j_extensions_comm_SerialComm_configFlowControl(env, obj) &&
+				Java_j_extensions_comm_SerialComm_configTimeouts(env, obj))
 			env->SetBooleanField(obj, env->GetFieldID(env->GetObjectClass(obj), "isOpened", "Z"), JNI_TRUE);
 		else
 		{
@@ -126,7 +127,7 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configPort(JNIEnv *
 	options.c_cflag = (B38400 | byteSize | stopBits | parity | CLOCAL | CREAD);
 	if (parityInt == j_extensions_comm_SerialComm_SPACE_PARITY)
 		options.c_cflag &= ~PARODD;
-	options.c_iflag = XonXoffInEnabled | XonXoffOutEnabled | ((parityInt > 0) ? (INPCK | ISTRIP) : IGNPAR);
+	options.c_iflag = ((parityInt > 0) ? (INPCK | ISTRIP) : IGNPAR);
 	options.c_oflag = 0;
 	options.c_lflag = 0;
 
@@ -134,11 +135,38 @@ JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configPort(JNIEnv *
 	tcsetattr(portFD, TCSAFLUSH, &options);
 	ioctl(portFD, TIOCEXCL);				// Block non-root users from using this port
 
-	// Allow custom baud rate
+	// Allow custom baud rate (only for true serial ports)
 	ioctl(portFD, TIOCGSERIAL, &serialInfo);
 	serialInfo.flags = ASYNC_SPD_CUST | ASYNC_LOW_LATENCY;
 	serialInfo.custom_divisor = serialInfo.baud_base / baudRate;
 	ioctl(portFD, TIOCSSERIAL, &serialInfo);
+	return JNI_TRUE;
+}
+
+JNIEXPORT jboolean JNICALL Java_j_extensions_comm_SerialComm_configFlowControl(JNIEnv *env, jobject obj)
+{
+	struct termios options;
+	jclass serialCommClass = env->GetObjectClass(obj);
+	int portFD = (int)env->GetLongField(obj, env->GetFieldID(serialCommClass, "portHandle", "J"));
+
+	// Get port parameters from Java class
+	int flowControl = env->GetIntField(obj, env->GetFieldID(serialCommClass, "flowControl", "I"));
+	tcflag_t CTSRTSEnabled = (((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_CTS_ENABLED) > 0) ||
+			((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_RTS_ENABLED) > 0)) ? CRTSCTS : 0;
+	tcflag_t XonXoffInEnabled = ((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_XONXOFF_IN_ENABLED) > 0) ? IXOFF : 0;
+	tcflag_t XonXoffOutEnabled = ((flowControl & j_extensions_comm_SerialComm_FLOW_CONTROL_XONXOFF_OUT_ENABLED) > 0) ? IXON : 0;
+
+	// Retrieve existing port configuration
+	tcgetattr(portFD, &options);
+
+	// Set updated port parameters
+	options.c_cflag |= CTSRTSEnabled;
+	options.c_iflag |= XonXoffInEnabled | XonXoffOutEnabled;
+	options.c_oflag = 0;
+	options.c_lflag = 0;
+
+	// Apply changes
+	tcsetattr(portFD, TCSAFLUSH, &options);
 	return JNI_TRUE;
 }
 
