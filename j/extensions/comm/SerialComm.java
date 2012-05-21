@@ -20,8 +20,11 @@ public class SerialComm
 	static
 	{
 		String OS = System.getProperty("os.name").toLowerCase();
-		String tempFileDirectory = System.getProperty("java.io.tmpdir");
 		String libraryPath = "", fileName = "";
+		String tempFileDirectory = System.getProperty("java.io.tmpdir");
+		if ((tempFileDirectory.charAt(tempFileDirectory.length()-1) != '\\') && 
+				(tempFileDirectory.charAt(tempFileDirectory.length()-1) != '/'))
+			tempFileDirectory += "/";
 	
 		// Determine Operating System and architecture
 		if (OS.indexOf("win") >= 0)
@@ -64,7 +67,7 @@ public class SerialComm
 				libraryPath = "Linux/x86_64";
 			else
 				libraryPath = "Linux/x86";
-			fileName = "/libSerialComm.so";
+			fileName = "libSerialComm.so";
 		}
 		else
 		{
