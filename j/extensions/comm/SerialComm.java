@@ -29,7 +29,7 @@ public class SerialComm
 		// Determine Operating System and architecture
 		if (OS.indexOf("win") >= 0)
 		{
-			if ((System.getProperty("os.arch").indexOf("64") >= 0) || (new File("C:\\Program Files (x86)").exists()))
+			if (System.getProperty("os.arch").indexOf("64") >= 0)
 				libraryPath = "Windows/x86_64";
 			else
 				libraryPath = "Windows/x86";
@@ -37,16 +37,7 @@ public class SerialComm
 		}
 		else if (OS.indexOf("mac") >= 0)
 		{
-			String resultString = "";
-			try
-			{
-				InputStream inStream = Runtime.getRuntime().exec("getconf LONG_BIT").getInputStream();
-				resultString += (char)inStream.read();
-				resultString += (char)inStream.read();
-				inStream.close();
-			} catch (Exception e) {}
-			
-			if ((System.getProperty("os.arch").indexOf("64") >= 0) || (resultString.indexOf("64") >= 0))
+			if (System.getProperty("os.arch").indexOf("64") >= 0)
 				libraryPath = "OSX/x86_64";
 			else
 				libraryPath = "OSX/x86";
@@ -54,16 +45,7 @@ public class SerialComm
 		}
 		else if ((OS.indexOf("nix") >= 0) || (OS.indexOf("nux") >= 0))
 		{
-			String resultString = "";
-			try
-			{
-				InputStream inStream = Runtime.getRuntime().exec("getconf LONG_BIT").getInputStream();
-				resultString += (char)inStream.read();
-				resultString += (char)inStream.read();
-				inStream.close();
-			} catch (Exception e) {}
-			
-			if ((System.getProperty("os.arch").indexOf("64") >= 0) || (resultString.indexOf("64") >= 0))
+			if (System.getProperty("os.arch").indexOf("64") >= 0)
 				libraryPath = "Linux/x86_64";
 			else
 				libraryPath = "Linux/x86";

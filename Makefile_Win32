@@ -6,7 +6,7 @@ all : libSerialComm.dll
 libSerialComm.dll : SerialComm_Windows.o
 	gcc -Wl,--add-stdcall-alias -mno-cygwin -shared -o Windows\x86\SerialComm.dll Windows\SerialComm_Windows.o
 SerialComm_Windows.o : Windows\SerialComm_Windows.cpp j_extensions_comm_SerialComm.h
-	gcc -I"C:\Program Files\Java\jdk1.7.0_03\include" -I"C:\Program Files\Java\jdk1.7.0_03\include\win32" -c Windows\SerialComm_Windows.cpp -o Windows\SerialComm_Windows.o
+	gcc -I"C:\Program Files\Java\jdk1.7.0_05\include" -I"C:\Program Files\Java\jdk1.7.0_05\include\win32" -c Windows\SerialComm_Windows.cpp -o Windows\SerialComm_Windows.o
 j_extensions_comm_SerialComm.h : j/extensions/comm/SerialComm.class
 	javah -jni j.extensions.comm.SerialComm
 clean :
