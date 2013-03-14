@@ -24,7 +24,7 @@ JAVA_CLASS		:= ../j/extensions/comm/SerialComm.class
 .SUFFIXES:
 .SUFFIXES: .cpp .o .class .java .h
 
-# Default build target builds both 32 and 64 bit libraries
+# Default build target not possible due to different architecture compilers
 all :
 	$(PRINT) ""
 	$(PRINT) "Must specify a target (either win32 or win64), but not both at the same time since different versions of the Microsoft Compiler are required for difference architectures."
