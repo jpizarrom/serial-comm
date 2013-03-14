@@ -488,6 +488,8 @@ public class SerialComm
 	// InputStream interface class
 	private final class SerialCommInputStream extends InputStream
 	{
+		public SerialCommInputStream() {}
+		
 		@Override
 		public final int available() throws IOException
 		{
@@ -552,6 +554,8 @@ public class SerialComm
 	// OutputStream interface class
 	private final class SerialCommOutputStream extends OutputStream
 	{
+		public SerialCommOutputStream() {}
+		
 		@Override
 		public final void write(int b) throws IOException
 		{
