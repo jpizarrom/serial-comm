@@ -1,8 +1,9 @@
 /*
- * SerialComm.cpp
+ * SerialComm_OSX.cpp
  *
- *  Created on: Feb 25, 2012
- *      Author: hedgecrw
+ *       Created on:  Feb 25, 2012
+ *  Last Updated on:  Mar 14, 2013
+ *           Author:  Will Hedgecock
  */
 
 #ifdef __APPLE__
