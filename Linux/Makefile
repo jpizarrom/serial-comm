@@ -68,7 +68,7 @@ $(JNI_HEADER) : $(JAVA_CLASS)
 
 # Rules to clean source directories
 clean :
-	$(DELETE) -rf ./*.o ../*.h
+	$(DELETE) -rf x86/*.o x86_64/*.o ../*.h
 
 clobber : clean
-	$(DELETE) -rf ./x86 ./x86_64
+	$(DELETE) -rf x86 x86_64
