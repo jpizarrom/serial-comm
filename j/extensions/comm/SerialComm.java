@@ -72,6 +72,8 @@ public class SerialComm
 		{
 			if (System.getProperty("os.arch").indexOf("64") >= 0)
 				libraryPath = "Linux/x86_64";
+			else if (System.getProperty("os.arch").indexOf("arm") >= 0)
+				libraryPath = "Linux/bbb";
 			else
 				libraryPath = "Linux/x86";
 			fileName = "libSerialComm.so";
