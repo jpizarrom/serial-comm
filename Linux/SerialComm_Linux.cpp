@@ -45,7 +45,7 @@ JNIEXPORT jobjectArray JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JN
 	struct dirent *serialPortEntry;
 	int serialPort;
 	int numValues = -2, numChars, index = 0;
-	char portString[1024], comPort[1024], pathBase[21] = {"/dev/serial/by-path/"};
+	char portString[1024], comPort[1024], pathBase[21] = {"/dev/ttyS*"};
 
 	// Get relevant SerialComm methods and IDs
 	jmethodID serialCommConstructor = env->GetMethodID(serialCommClass, "<init>", "()V");
@@ -53,34 +53,35 @@ JNIEXPORT jobjectArray JNICALL Java_j_extensions_comm_SerialComm_getCommPorts(JN
 	jfieldID comPortID = env->GetFieldID(serialCommClass, "comPort", "Ljava/lang/String;");
 
 	// Enumerate serial ports on machine
-	if ((serialPortIterator = opendir(pathBase)) == NULL)
-		return NULL;
-	while (readdir(serialPortIterator) != NULL) ++numValues;
-	rewinddir(serialPortIterator);
+	// if ((serialPortIterator = opendir(pathBase)) == NULL)
+	// 	return NULL;
+	// while (readdir(serialPortIterator) != NULL) ++numValues;
+	numValues = 1;
+	// rewinddir(serialPortIterator);
 	jobjectArray arrayObject = env->NewObjectArray(numValues, serialCommClass, 0);
-	while ((serialPortEntry = readdir(serialPortIterator)) != NULL)
-	{
-		// Get serial COM value
-		strcpy(portString, pathBase);
-		strcpy(portString+20, serialPortEntry->d_name);
-		if ((numChars = readlink(portString, comPort, sizeof(comPort))) == -1)
-			continue;
-		comPort[numChars] = '\0';
+	// while ((serialPortEntry = readdir(serialPortIterator)) != NULL)
+	// {
+	// 	// Get serial COM value
+	// 	strcpy(portString, pathBase);
+	// 	strcpy(portString+20, serialPortEntry->d_name);
+	// 	if ((numChars = readlink(portString, comPort, sizeof(comPort))) == -1)
+	// 		continue;
+	// 	comPort[numChars] = '\0';
 
-		// Get port name
-		strcpy(portString, strrchr(comPort, '/') + 1);
-		strcpy(comPort, "/dev/");
-		strcpy(comPort+5, portString);
+	// 	// Get port name
+	// 	strcpy(portString, strrchr(comPort, '/') + 1);
+	// 	strcpy(comPort, "/dev/");
+	// 	strcpy(comPort+5, portString);
 
-		// Create new SerialComm object containing the enumerated values
+	// 	// Create new SerialComm object containing the enumerated values
 		jobject serialCommObject = env->NewObject(serialCommClass, serialCommConstructor);
-		env->SetObjectField(serialCommObject, portStringID, env->NewStringUTF(portString));
-		env->SetObjectField(serialCommObject, comPortID, env->NewStringUTF(comPort));
+		env->SetObjectField(serialCommObject, portStringID, env->NewStringUTF("/dev/ttyS4"));
+		env->SetObjectField(serialCommObject, comPortID, env->NewStringUTF("/dev/ttyS4"));
 
-		// Add new SerialComm object to array
+	// 	// Add new SerialComm object to array
 		env->SetObjectArrayElement(arrayObject, index++, serialCommObject);
-	}
-	closedir(serialPortIterator);
+	// }
+	// closedir(serialPortIterator);
 
 	return arrayObject;
 }

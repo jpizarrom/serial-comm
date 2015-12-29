@@ -16,6 +16,8 @@ LIBRARY_NAME	:= libSerialComm.so
 SOURCES			:= SerialComm_Linux.cpp
 OBJECTSx86		:= $(patsubst %.cpp,x86/%.o,$(SOURCES))
 OBJECTSx86_64	:= $(patsubst %.cpp,x86_64/%.o,$(SOURCES))
+OBJECTSrpi		:= $(patsubst %.cpp,rpi/%.o,$(SOURCES))
+OBJECTSbbb		:= $(patsubst %.cpp,bbb/%.o,$(SOURCES))
 JNI_HEADER		:= ../j_extensions_comm_SerialComm.h
 JAVA_CLASS		:= ../j/extensions/comm/SerialComm.class
 
@@ -37,11 +39,23 @@ linux64 : ARCH = -m64
 linux64 : checkdirs x86_64/$(LIBRARY_NAME)
 	$(DELETE) -rf x86_64/*.o
 
+linuxrpi : ARCH = 
+linuxrpi : checkdirs rpi/$(LIBRARY_NAME)
+	$(DELETE) -rf rpi/*.o
+
+linuxbbb : ARCH = 
+linuxbbb : checkdirs bbb/$(LIBRARY_NAME)
+	$(DELETE) -rf bbb/*.o
+
 # Rule to create build directories
-checkdirs : x86 x86_64
+checkdirs : x86 x86_64 rpi bbb
 x86 :
 	$(MKDIR) -p $@
 x86_64 :
+	$(MKDIR) -p $@
+rpi :
+	$(MKDIR) -p $@
+bbb :
 	$(MKDIR) -p $@
 
 # Rule to build 32-bit library
@@ -51,11 +65,21 @@ x86/$(LIBRARY_NAME) : $(JNI_HEADER) $(OBJECTSx86)
 # Rule to build 64-bit library
 x86_64/$(LIBRARY_NAME) : $(JNI_HEADER) $(OBJECTSx86_64)
 	$(CC) $(LDFLAGS) $(ALL_LDFLAGS) $(ARCH) -o $@ $(OBJECTSx86_64)
+
+rpi/$(LIBRARY_NAME) : $(JNI_HEADER) $(OBJECTSrpi)
+	$(CC) $(LDFLAGS) $(ALL_LDFLAGS) $(ARCH) -o $@ $(OBJECTSrpi)
+
+bbb/$(LIBRARY_NAME) : $(JNI_HEADER) $(OBJECTSbbb)
+	$(CC) $(LDFLAGS) $(ALL_LDFLAGS) $(ARCH) -o $@ $(OBJECTSbbb)
 	
 # Suffix rules to get from *.cpp -> *.o
 x86/%.o : %.cpp
 	$(CC) $(INCLUDES) $(CFLAGS) $(ALL_CFLAGS) $(ARCH) -c $< -o $@
 x86_64/%.o : %.cpp
+	$(CC) $(INCLUDES) $(CFLAGS) $(ALL_CFLAGS) $(ARCH) -c $< -o $@
+rpi/%.o : %.cpp
+	$(CC) $(INCLUDES) $(CFLAGS) $(ALL_CFLAGS) $(ARCH) -c $< -o $@
+bbb/%.o : %.cpp
 	$(CC) $(INCLUDES) $(CFLAGS) $(ALL_CFLAGS) $(ARCH) -c $< -o $@
 
 # Rule to build JNI header file
@@ -68,7 +92,7 @@ $(JNI_HEADER) : $(JAVA_CLASS)
 
 # Rules to clean source directories
 clean :
-	$(DELETE) -rf x86/*.o x86_64/*.o ../*.h
+	$(DELETE) -rf x86/*.o x86_64/*.o rpi/*.o bbb/*.o ../*.h
 
 clobber : clean
-	$(DELETE) -rf x86 x86_64
+	$(DELETE) -rf x86 x86_64 rpi bbb

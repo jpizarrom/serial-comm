@@ -3,7 +3,7 @@ JAR			= jar
 JARFLAGS	= cmf
 JARNAME		= SerialComm.jar
 PACKAGE		= j/extensions/comm
-LIBS		= Linux/x86/* Linux/x86_64/* OSX/x86/* OSX/x86_64/* Windows/x86/* Windows/x86_64/*
+LIBS		= Linux/x86/* Linux/x86_64/* Linux/rpi/* Linux/bbb/* OSX/x86/* OSX/x86_64/* Windows/x86/* Windows/x86_64/*
 
 # Define phony and suffix rules
 .PHONY: all
